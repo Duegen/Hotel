@@ -1,5 +1,6 @@
 package hotel.generator;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -16,6 +17,8 @@ public final class Constants {
 	public final static int GUEST_MAX_ID = 100;
 	public final static Map<String, String> NAMES_EMAILS = getNamesEmails();
 	
+	public final static int TYPE_MIN_ID = 1;
+	public final static int TYPE_MAX_ID = 100;
 	public final static int BOOKING_MIN_ID = 1;
 	public final static int BOOKING_MAX_ID = 100_000;
 	public static final int ROOM_MIN_NUMBER = 0;
@@ -24,7 +27,8 @@ public final class Constants {
 	public static final int ROOM_MAX_CAP = 10;
 	public static final double PRICE_PER_NIGHT_MIN = 100.0;
 	public static final double PRICE_PER_NIGHT_MAX = 10000.0;
-	
+	public final static LocalDate MIN_BD = LocalDate.of(1950, 1, 1);
+	public final static LocalDate MAX_BD = LocalDate.now().minusYears(18);
 	
 	private static Map<String, String> getNamesEmails(){
 		Map<String, String> result = new HashMap<String, String>();

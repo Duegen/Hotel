@@ -1,19 +1,15 @@
 package hotel.generator;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 
 import hotel.interfaces.IHotelService;
-import hotel.model.Booking;
-import hotel.model.Guest;
-import hotel.model.Room;
-import hotel.model.RoomType;
+import hotel.model.*;
 
 public class RandomHotelDataGenerator {
 	private List<RoomType> roomTypes;
@@ -35,19 +31,23 @@ public class RandomHotelDataGenerator {
 	}
 	
 	private List<RoomType> generateRoomTypes() {
-		HashSet<RoomType> result = new HashSet<RoomType>();
+		List<RoomType> result = new ArrayList<RoomType>();
 		while(result.size() < N_TYPES) {
-			result.add(getRandomRoomType());
+			RoomType randomType = getRandomRoomType();
+			if(result.stream().noneMatch(rt -> rt.equals(randomType))
+					&& result.stream().noneMatch(rt -> rt.isSame(randomType)))
+				result.add(randomType);
 		}
-		return new ArrayList<RoomType>(result);
+		return result;
 	}
 
 	private RoomType getRandomRoomType() {
+		int randomId = r.nextInt(Constants.TYPE_MIN_ID, Constants.TYPE_MAX_ID + 1);
 		int randomNameIndex = r.nextInt(0, 3);
 		String randomName = Constants.NAMES[randomNameIndex];
 		int randomCapacity = Constants.CAPACITY[r.nextInt(0, 4)];
 		double randomPrice = Constants.PRICE_PER_PERSON_PER_NIGHT[randomNameIndex];
-		return new RoomType(randomName, randomPrice * randomCapacity, randomCapacity);
+		return new RoomType(randomId, randomName, randomPrice * randomCapacity, randomCapacity);
 	}
 	
 	private List<Room> generateRooms(){
@@ -64,28 +64,33 @@ public class RandomHotelDataGenerator {
 	}
 	
 	private List<Guest> generateGuests(){
-		Set<Guest> result = new HashSet<>();
-		while(result.size() < N_GUESTS) 
-			result.add(getRandomGuest(result.size()));
-		return new ArrayList<Guest>(result);
+		List<Guest> result = new ArrayList<>();
+		while(result.size() < N_GUESTS) { 
+			Guest randomGuest = getRandomGuest(result.size());
+			if(result.stream().noneMatch(g -> g.equals(randomGuest)))
+				result.add(randomGuest);
+		}
+		return result;
 	}
 
 	private static Guest getRandomGuest(int index) {
 		Entry<String, String> randomNameEmail = Constants.NAMES_EMAILS.entrySet().stream()
 				.skip(index)
 				.findFirst().orElse(null);
+		LocalDate randomBD = Constants.MIN_BD.plusDays(r.nextLong(0, ChronoUnit.DAYS.between(Constants.MIN_BD, Constants.MAX_BD)));
 		return new Guest(r.nextInt(Constants.GUEST_MIN_ID, Constants.GUEST_MAX_ID + 1), randomNameEmail.getKey(),
-				randomNameEmail.getValue(), "password");
+				randomNameEmail.getValue(), randomBD, "password");
 	}
 	
 	private List<Booking> generateBookings(){
-		HashSet<Booking> result = new HashSet<>();
+		List<Booking> result = new ArrayList<>();
 		while(result.size() < N_BOOKINGS) {
-			Booking newBooking = getRandomBooking();
-			
-			if(isRoomAvailable(result, newBooking.getRoom(), newBooking.getCheckIn(), newBooking.getCheckOut())) result.add(newBooking);
+			Booking randomBooking = getRandomBooking();
+			boolean isAvailable = isRoomAvailable(result, randomBooking.getRoom(), randomBooking.getCheckIn(), randomBooking.getCheckOut());
+			if(isAvailable && result.stream().noneMatch(bk -> bk.equals(randomBooking))) 
+				result.add(randomBooking);
 		}
-		return new ArrayList<Booking>(result);
+		return result;
 	}
 
 	private Booking getRandomBooking() {
@@ -114,7 +119,7 @@ public class RandomHotelDataGenerator {
 		return bookings;
 	}
 	
-	private boolean isRoomAvailable(HashSet<Booking> result, Room room, LocalDate checkIn, LocalDate checkOut) {
+	private boolean isRoomAvailable(List<Booking> result, Room room, LocalDate checkIn, LocalDate checkOut) {
         if(Objects.isNull(room) || Objects.isNull(checkIn) || Objects.isNull(checkOut))
         	throw new IllegalArgumentException("arg can not be null");
         if (!checkOut.isAfter(checkIn)) {
@@ -128,29 +133,30 @@ public class RandomHotelDataGenerator {
 	public void copy(IHotelService service) {
 		roomTypes.stream().forEach(rt -> {
 			try {
-				service.addRoomType(rt.getName(), rt.getPricePerNight(), rt.getCapacity());
+				service.addRoomType(rt);
 			} catch (Exception e) {
-				
+				System.out.println(e);
 			}
 		});
 		rooms.stream().forEach(r -> {
 			try {
 				service.addRoom(r.getRoomNumber(), r.getType());
 			} catch (Exception e) {
-				
+				System.out.println(e);
 			}
 		});
 		guests.stream().forEach(g -> {
 			try {
-				service.addGuest(g.getId(), g.getName(), g.getEmail(), null);
+				service.addGuest(g);
 			} catch (Exception e) {
-				
+				System.out.println(e);
 			}
 		});
 		bookings.stream().forEach(bk -> {
 			try {
 				service.addBooking(bk);
 			} catch (Exception e) {
+				System.out.println(e);
 			}
 		});
 	}

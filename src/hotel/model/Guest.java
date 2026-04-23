@@ -1,26 +1,29 @@
 package hotel.model;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Objects;
 
 public class Guest implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
-	private int id;
+	private final int id;
 	private String name;
 	private String email;
+	private LocalDate dateOfBirth; 
 	private transient String password;
 	
-	public Guest(int id, String name, String email, String password) {
+	public Guest(int id, String name, String email, LocalDate dateOfBirth, String password) {
 		this.id = id;
 		this.name = name;
 		this.email = email;
+		this.dateOfBirth = dateOfBirth;
 		this.password = password;
 	}
 	
 	@Override
 	public String toString() {
-		return "Guest [id=" + id + ", name=" + name + ", email=" + email + ", password=" + password + "]";
+		return "Guest [id=" + id + ", name=" + name + ", email=" + email + ", date of birth=" + dateOfBirth + ", password=" + password + "]";
 	}
 
 	@Override
@@ -49,6 +52,10 @@ public class Guest implements Serializable {
 
 	public String getEmail() {
 		return email;
+	}
+	
+	public LocalDate getDateOfBirth(){
+		return dateOfBirth;
 	}
 	
 	public String getPassword() {

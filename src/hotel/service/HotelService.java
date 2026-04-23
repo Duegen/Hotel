@@ -1,43 +1,30 @@
 package hotel.service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.TreeMap;
 
-import hotel.generator.Constants;
 import hotel.interfaces.IHotelService;
 import hotel.model.*;
-import hotel.service.exceptions.BookingAlreadyExistsException;
-import hotel.service.exceptions.BookingNotFoundException;
-import hotel.service.exceptions.DuplicateEmailException;
-import hotel.service.exceptions.GuestAlreadyExistsException;
-import hotel.service.exceptions.GuestNotFoundException;
-import hotel.service.exceptions.NoFreeBookingIdException;
-import hotel.service.exceptions.RemoveBookingActiveException;
-import hotel.service.exceptions.RemoveGuestAssignException;
-import hotel.service.exceptions.RemoveRoomAssignException;
-import hotel.service.exceptions.RemoveRoomTypeAssignException;
-import hotel.service.exceptions.RoomAlreadyExistsException;
-import hotel.service.exceptions.RoomNotFoundException;
-import hotel.service.exceptions.RoomTypeAlreadyExistsException;
-import hotel.service.exceptions.RoomTypeNotFoundException;
-import hotel.service.exceptions.RoomUnAvailableException;
+import hotel.service.exceptions.*;
+import hotel.validation.Constants;
 import hotel.validation.Validation;
 
-public class HotelService implements IHotelService{
+public class HotelService implements IHotelService {
 	private static HotelService instance;
-	private final List<RoomType> roomTypes;
-	private final List<Booking> bookings;
-	private final List<Room> rooms;
-	private final List<Guest> guests;
+	private final Map<Integer, RoomType> roomTypes;
+	private final Map<Integer, Booking> bookings;
+	private final Map<Integer, Room> rooms;
+	private final Map<Integer, Guest> guests;
 
 	private HotelService() {
-		roomTypes = new ArrayList<RoomType>();
-		bookings = new ArrayList<Booking>();
-		rooms = new ArrayList<Room>();
-		guests = new ArrayList<Guest>();
+		roomTypes = new HashMap<>();
+		bookings = new HashMap<>();
+		rooms = new HashMap<>();
+		guests = new TreeMap<>();
 	}
 
 	public static HotelService getInstance() {
@@ -46,205 +33,235 @@ public class HotelService implements IHotelService{
 		return instance;
 	}
 
-	public List<RoomType> getRoomTypes() {
+	public Map<Integer, RoomType> getRoomTypes() {
 		return roomTypes;
 	}
 
-	public List<Booking> getBookings() {
+	public Map<Integer, Booking> getBookings() {
 		return bookings;
 	}
 
-	public List<Room> getRooms() {
+	public Map<Integer, Room> getRooms() {
 		return rooms;
 	}
-	
-	public List<Guest> getGuests() {
+
+	public Map<Integer, Guest> getGuests() {
 		return guests;
 	}
 
 	@Override
-	public void addRoomType(String name, double pricePerNight, int capacity) throws RoomTypeAlreadyExistsException {
-		RoomType roomType = new RoomType(name, pricePerNight, capacity);
-		if(Validation.validateRoomType(name, pricePerNight, capacity)) {
-			if(roomTypes.contains(roomType))
-				throw new RoomTypeAlreadyExistsException(roomType);
-			roomTypes.add(roomType);
-		}else
+	public RoomType createRoomType(String name, double pricePerNight, int capacity)
+			throws NoFreeRoomTypeIdException, RoomTypeDuplicateException {
+		int roomTypeId = findFreeId(roomTypes, Constants.TYPE_MIN_ID, Constants.TYPE_MAX_ID);
+		if (roomTypeId == -1)
+			throw new NoFreeRoomTypeIdException();
+		RoomType roomType = new RoomType(roomTypeId, name, pricePerNight, capacity);
+		if (Validation.validateRoomType(roomType)) {
+			if (roomTypes.values().stream().anyMatch(rt -> rt.isSame(roomType)))
+				throw new RoomTypeDuplicateException(roomType);
+			roomTypes.put(roomTypeId, roomType);
+			return roomType;
+		} else
+			throw new IllegalArgumentException("invalid room type data");
+	}
+	
+	@Override
+	public void addRoomType(RoomType roomType)
+			throws RoomTypeAlreadyExistsException, NoFreeRoomTypeIdException, RoomTypeDuplicateException {
+		if (Validation.validateRoomType(roomType)) {
+			if(roomTypes.containsKey(roomType.getTypeId()))
+				throw new RoomTypeAlreadyExistsException(roomType.getTypeId());
+			if (roomTypes.values().stream().anyMatch(rt -> rt.isSame(roomType)))
+				throw new RoomTypeDuplicateException(roomType);
+			roomTypes.put(roomType.getTypeId(), roomType);
+		} else
 			throw new IllegalArgumentException("invalid room type data");
 	}
 
 	@Override
-	public void addRoom(int roomNumber, RoomType roomType) throws RoomAlreadyExistsException, RoomTypeNotFoundException {
+	public void addRoom(int roomNumber, RoomType roomType)
+			throws RoomAlreadyExistsException, RoomTypeNotFoundException {
 		Room room = new Room(roomNumber, roomType);
-		if(Validation.validateRoom(roomNumber, roomType)) {
-			if(rooms.contains(room))
+		if (Validation.validateRoom(room)) {
+			if (rooms.containsKey(roomNumber))
 				throw new RoomAlreadyExistsException(room.getRoomNumber());
-			if(!roomTypes.contains(roomType))
-				throw new RoomTypeNotFoundException(room.getType());
-			rooms.add(room);
-		}else
-			throw new IllegalArgumentException("invalid room data");	
+			if (!roomTypes.containsKey(roomType.getTypeId()))
+				throw new RoomTypeNotFoundException(room.getType().getTypeId());
+			rooms.put(roomNumber, room);
+		} else
+			throw new IllegalArgumentException("invalid room data");
 	}
 
 	@Override
-	public void addGuest(int guestId, String name, String email, String password) throws GuestAlreadyExistsException, DuplicateEmailException {
-		Guest guest = new Guest(guestId, name, email, password);
-		if(Validation.validateGuest(guestId, name, email)) {
-			if(guests.contains(guest))
-				throw new GuestAlreadyExistsException(guest.getId());
-			if(guests.stream().anyMatch(g -> g.getEmail().equals(email)))
+	public Guest createGuest(String name, String email, LocalDate dateOfBirth, String password)
+			throws DuplicateEmailException, NoFreeGuestIdException {
+		int guestId = findFreeId(guests, Constants.GUEST_MIN_ID, Constants.GUEST_MAX_ID);
+		if (guestId == -1)
+			throw new NoFreeGuestIdException();
+		Guest guest = new Guest(guestId, name, email, dateOfBirth, password);
+		if (Validation.validateGuest(guest)) {
+			if (guests.values().stream().anyMatch(g -> g.getEmail().equals(email)))
 				throw new DuplicateEmailException(email);
-			guests.add(guest);
-		}else
-			throw new IllegalArgumentException("invalid guest data");			
+			guests.put(guestId, guest);
+			return guest;
+		} else
+			throw new IllegalArgumentException("invalid guest data");
 	}
 	
 	@Override
-	public void addBooking(Booking booking) throws BookingAlreadyExistsException, GuestNotFoundException, RoomNotFoundException, NoFreeBookingIdException, RoomUnAvailableException {
-		if(Validation.validateBooking(booking.getGuest(), booking.getRoom(), booking.getCheckIn(), booking.getCheckOut())) {
-			if(!guests.contains(booking.getGuest()))
+	public void addGuest(Guest guest)
+			throws DuplicateEmailException, NoFreeGuestIdException, GuestAlreadyExistsException {
+		if (Validation.validateGuest(guest)) {
+			if(guests.containsKey(guest.getId()))
+				throw new GuestAlreadyExistsException(guest.getId());
+			if (guests.values().stream().anyMatch(g -> g.getEmail().equals(guest.getEmail())))
+				throw new DuplicateEmailException(guest.getEmail());
+			guests.put(guest.getId(), guest);
+		} else
+			throw new IllegalArgumentException("invalid guest data");
+	}
+
+	@Override
+	public void addBooking(Booking booking) throws BookingAlreadyExistsException, GuestNotFoundException,
+			RoomNotFoundException, NoFreeBookingIdException, RoomUnAvailableException {
+		if (Validation.validateBooking(booking)) {
+			if (!guests.containsKey(booking.getGuest().getId()))
 				throw new GuestNotFoundException(booking.getGuest().getId());
-			if(!rooms.contains(booking.getRoom()))
+			if (!rooms.containsKey(booking.getRoom().getRoomNumber()))
 				throw new RoomNotFoundException(booking.getRoom().getRoomNumber());
-			if (!isRoomAvailable(booking.getRoom(), booking.getCheckIn(), booking.getCheckOut())) 
-	            throw new RoomUnAvailableException(booking.getRoom().getRoomNumber(), booking.getCheckIn(), booking.getCheckOut());
-			bookings.add(booking);
-		}else
+			if (!isRoomAvailable(booking.getRoom(), booking.getCheckIn(), booking.getCheckOut()))
+				throw new RoomUnAvailableException(booking.getRoom().getRoomNumber(), booking.getCheckIn(),
+						booking.getCheckOut());
+			if (bookings.containsKey(booking.getBookingId()))
+				throw new BookingAlreadyExistsException(booking.getBookingId());
+			bookings.put(booking.getBookingId(), booking);
+		} else
 			throw new IllegalArgumentException("invalid booking data");
 	}
-	
+
 	@Override
-	public void createBooking(Guest guest, Room room, LocalDate checkIn, LocalDate checkOut) throws BookingAlreadyExistsException, GuestNotFoundException, RoomNotFoundException, NoFreeBookingIdException, RoomUnAvailableException {
-		int bookingId = findFreeBookingId();
-		if(bookingId == -1)
+	public Booking createBooking(Guest guest, Room room, LocalDate checkIn, LocalDate checkOut)
+			throws BookingAlreadyExistsException, GuestNotFoundException, RoomNotFoundException,
+			NoFreeBookingIdException, RoomUnAvailableException {
+		int bookingId = findFreeId(bookings, Constants.BOOKING_MIN_ID, Constants.BOOKING_MIN_ID);
+		if (bookingId == -1)
 			throw new NoFreeBookingIdException();
-		if(Validation.validateBooking(guest, room, checkIn, checkOut)) {
-			if(!guests.contains(guest))
+		Booking booking = new Booking(bookingId, guest, room, checkIn, checkOut);
+		if (Validation.validateBooking(booking)) {
+			if (!guests.containsKey(guest.getId()))
 				throw new GuestNotFoundException(guest.getId());
-			if(!rooms.contains(room))
+			if (!rooms.containsKey(room.getRoomNumber()))
 				throw new RoomNotFoundException(room.getRoomNumber());
-			if (!isRoomAvailable(room, checkIn, checkOut)) 
-	            throw new RoomUnAvailableException(room.getRoomNumber(), checkIn, checkOut);
-			Booking booking = new Booking(bookingId, guest, room, checkIn, checkOut);
-			bookings.add(booking);
-		}else
+			if (!isRoomAvailable(room, checkIn, checkOut))
+				throw new RoomUnAvailableException(room.getRoomNumber(), checkIn, checkOut);
+			bookings.put(bookingId, booking);
+			return booking;
+		} else
 			throw new IllegalArgumentException("invalid booking data");
 	}
 
-	private int findFreeBookingId() {
-		int id = Constants.BOOKING_MIN_ID;
-		for (Booking booking : bookings) {
-			if(booking.getBookingId() != id)
+	private <R> int findFreeId(Map<Integer, R> sourceMap, int minId, int maxId) {
+		int freeId = minId;
+		for (int id : sourceMap.keySet()) {
+			if (id != freeId)
 				break;
-			id++;
+			freeId++;
 		}
-		return id > Constants.BOOKING_MAX_ID ? -1 : id;
-		
+		return freeId > maxId ? -1 : freeId;
 	}
 
 	@Override
-	public boolean removeRoomType(String name, double pricePerNight, int capacity) throws RemoveRoomTypeAssignException, RoomTypeNotFoundException {
-		if(Validation.validateRoomType(name, pricePerNight, capacity)) {
-			Optional<RoomType> roomType = findRoomType(name, pricePerNight, capacity);
-			if(roomType.isEmpty())
-				throw new RoomTypeNotFoundException(new RoomType(name, pricePerNight, capacity));
-			boolean typeIsUsedByRooms = rooms.stream()
-	                .map(Room::getType)
-	                .anyMatch(type -> type.equals(roomType.get()));
-			if (typeIsUsedByRooms) 
-	            throw new RemoveRoomTypeAssignException(roomType.get());
-			return roomTypes.remove(roomType.get());
-		}	
-		else
-			throw new IllegalArgumentException("invalid room type data");
+	public RoomType removeRoomType(int roomTypeId) throws RemoveRoomTypeAssignException, RoomTypeNotFoundException {
+		if (!Validation.validateRoomTypeId(roomTypeId))
+			throw new IllegalArgumentException("invalid room type id");
+		if(!roomTypes.containsKey(roomTypeId))
+			throw new RoomTypeNotFoundException(roomTypeId);
+		RoomType roomType = roomTypes.get(roomTypeId);
+		boolean typeIsUsedByRooms = rooms.values().stream()
+	            .map(Room::getType)
+	            .anyMatch(type -> type.equals(roomType));
+		if (typeIsUsedByRooms) 
+			throw new RemoveRoomTypeAssignException(roomTypeId);
+		return roomTypes.remove(roomTypeId);	
 	}
 
 	@Override
-	public boolean removeRoom(int roomNumber) throws RoomNotFoundException, RemoveRoomAssignException {
-		if(!Validation.validateRoomNumber(roomNumber))
-        	throw new IllegalArgumentException("invalid room number");
-		Optional<Room> room = findRoomByNumber(roomNumber);
-		if(room.isEmpty())
+	public Room removeRoom(int roomNumber) throws RoomNotFoundException, RemoveRoomAssignException {
+		if (!Validation.validateRoomNumber(roomNumber))
+			throw new IllegalArgumentException("invalid room number");
+		if(!rooms.containsKey(roomNumber))
 			throw new RoomNotFoundException(roomNumber);
-		boolean hasRelatedBookings = bookings.stream()
-                .anyMatch(booking -> booking.getRoom().equals(room));
-        if (hasRelatedBookings) 
-        	throw new RemoveRoomAssignException(roomNumber);
-        return rooms.remove(room.get());
+		Room room = rooms.get(roomNumber);
+		boolean hasRelatedBookings = bookings.values().stream()
+				.anyMatch(booking -> booking.getRoom().equals(room));
+		if (hasRelatedBookings)
+			throw new RemoveRoomAssignException(roomNumber);
+		return rooms.remove(roomNumber);
 
 	}
 
 	@Override
-	public boolean removeGuest(int guestId) throws GuestNotFoundException, RemoveGuestAssignException {
-		if(!Validation.validateGuestId(guestId))
-        	throw new IllegalArgumentException("invalid guest id");
-		Optional<Guest> guest = findGuestById(guestId);
-		if(guest.isEmpty())
+	public Guest removeGuest(int guestId) throws GuestNotFoundException, RemoveGuestAssignException {
+		if (!Validation.validateGuestId(guestId))
+			throw new IllegalArgumentException("invalid guest id");
+		if (!guests.containsKey(guestId))
 			throw new GuestNotFoundException(guestId);
-		boolean hasRelatedBookings = bookings.stream()
-                .anyMatch(booking -> booking.getGuest().equals(guest.get()));
-        if (hasRelatedBookings) 
-        	throw new RemoveGuestAssignException(guestId);
-        return guests.remove(guest.get());
+		Guest guest = guests.get(guestId);
+		boolean hasRelatedBookings = bookings.values().stream()
+				.anyMatch(booking -> booking.getGuest().equals(guest));
+		if (hasRelatedBookings)
+			throw new RemoveGuestAssignException(guestId);
+		return guests.remove(guestId);
 	}
 
 	@Override
-	public boolean cancelBooking(int bookingId) throws BookingNotFoundException, RemoveBookingActiveException {
-		if(!Validation.validateBookingId(bookingId))
-        	throw new IllegalArgumentException("invalid booking id");
-		Optional<Booking> booking = findBookingById(bookingId);
-		if(booking.isEmpty())
+	public Booking cancelBooking(int bookingId) throws BookingNotFoundException, RemoveBookingActiveException {
+		if (!Validation.validateBookingId(bookingId))
+			throw new IllegalArgumentException("invalid booking id");
+		if (!bookings.containsKey(bookingId))
 			throw new BookingNotFoundException(bookingId);
-		boolean isBookingActive = LocalDate.now().isAfter(booking.get().getCheckIn()) 
-				&& LocalDate.now().isBefore(booking.get().getCheckOut());
-        if (isBookingActive) 
-        	throw new RemoveBookingActiveException(booking.get());
-        return bookings.remove(booking.get());
+		Booking booking = bookings.get(bookingId);
+		boolean isBookingActive = LocalDate.now().isAfter(booking.getCheckIn())
+				&& LocalDate.now().isBefore(booking.getCheckOut());
+		if (isBookingActive)
+			throw new RemoveBookingActiveException(booking);
+		return bookings.remove(bookingId);
 	}
 
 	@Override
-    public boolean isRoomAvailable(Room room, LocalDate checkIn, LocalDate checkOut) {
-        if(Objects.isNull(room) || Objects.isNull(checkIn) || Objects.isNull(checkOut))
-        	throw new IllegalArgumentException("arg can not be null");
-        if (!checkOut.isAfter(checkIn)) {
-            throw new IllegalArgumentException("Check-out must be after check-in");
-        }
-        return bookings.stream()
-                .filter(booking -> booking.getRoom().equals(room))
-                .noneMatch(booking -> booking.overlaps(checkIn, checkOut));
-    }
+	public boolean isRoomAvailable(Room room, LocalDate checkIn, LocalDate checkOut) {
+		if (Objects.isNull(room) || Objects.isNull(checkIn) || Objects.isNull(checkOut))
+			throw new IllegalArgumentException("arg can not be null");
+		if (!checkOut.isAfter(checkIn)) {
+			throw new IllegalArgumentException("check-out must be after check-in");
+		}
+		return bookings.values().stream()
+				.filter(booking -> booking.getRoom().equals(room))
+				.noneMatch(booking -> booking.overlaps(checkIn, checkOut));
+	}
 
-    @Override
-    public Optional<Room> findRoomByNumber(int roomNumber) {
-    	return rooms.stream()
-                .filter(room -> room.getRoomNumber() == roomNumber)
-                .findFirst();
-    }
+	@Override
+	public void addBookingToDate(Booking booking) {
+		// TODO Auto-generated method stub
 
+	}
 
-    @Override
-    public Optional<RoomType> findRoomType(String name, double pricePerNight, int capacity) {
-        if (Objects.isNull(name)) 
-            return Optional.empty();
-        RoomType roomType = new RoomType(name, pricePerNight, capacity);
-        return roomTypes.stream()
-                .filter(type -> type.equals(roomType))
-                .findFirst();
-    }
+	@Override
+	public Map<LocalDate, List<Booking>> getBookingsCheckInDate() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
+	@Override
+	public List<Booking> getBookingsStartOn(LocalDate checkInDate) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override
-    public Optional<Guest> findGuestById(int guestId) {
-        return guests.stream()
-                .filter(guest -> guest.getId() == guestId)
-                .findFirst();
-    }
+	@Override
+	public List<Booking> getBookingsByGuestsId(int guestId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-
-    @Override
-    public Optional<Booking> findBookingById(int bookingId) {
-        return bookings.stream()
-                .filter(booking -> booking.getBookingId() == bookingId)
-                .findFirst();
-    }
 }

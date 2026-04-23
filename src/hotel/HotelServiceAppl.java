@@ -35,12 +35,12 @@ public class HotelServiceAppl {
 			System.out.println("- Hotel data is generated");
 		}
 		System.out.println();
-		Displayer.displayRoomTypes(service.getRoomTypes());
-		Displayer.displayRooms(service.getRooms());
-		Displayer.displayGuests(service.getGuests());
-		Displayer.displayBookings(service.getBookings());
+		Displayer.displayRoomTypes(service.getRoomTypes().values());
+		Displayer.displayRooms(service.getRooms().values());
+		Displayer.displayGuests(service.getGuests().values());
+		Displayer.displayBookings(service.getBookings().values());
 			
-		Displayer.displayAnalitics(service.getBookings(), service.getRooms().size());
+		Displayer.displayAnalitics(service.getBookings().values(), service.getRooms().values());
 		System.out.println();
 		try {
 			servicePersistence.saveHotelData();

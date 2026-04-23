@@ -1,6 +1,7 @@
 package hotel.service;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,10 +38,10 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 	}
 	
 	public void saveHotelData() throws IOException {
-			saveRoomType(serviceInstance.getRoomTypes());
-			saveRooms(serviceInstance.getRooms());
-			saveGuests(serviceInstance.getGuests());
-			saveBookings(serviceInstance.getBookings());
+			saveRoomType(serviceInstance.getRoomTypes().values());
+			saveRooms(serviceInstance.getRooms().values());
+			saveGuests(serviceInstance.getGuests().values());
+			saveBookings(serviceInstance.getBookings().values());
 	}
 
 	public boolean loadHotelData() throws IOException{
@@ -51,7 +52,7 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 		
 		roomTypesLoaded.stream().forEach(rt -> {
 			try {
-				serviceInstance.addRoomType(rt.getName(), rt.getPricePerNight(), rt.getCapacity());
+				serviceInstance.addRoomType(rt);
 			} catch (Exception e) {
 				
 			}
@@ -65,7 +66,7 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 		});
 		guestsLoaded.stream().forEach(g -> {
 			try {
-				serviceInstance.addGuest(g.getId(), g.getName(), g.getEmail(), null);
+				serviceInstance.addGuest(g);
 			} catch (Exception e) {
 				
 			}
@@ -80,77 +81,64 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 		return true;
 	}
 
-	private void saveRoomType(List<RoomType> roomTypes) throws IOException {
+	private void saveRoomType(Collection<RoomType> roomTypes) throws IOException {
 		if (Objects.isNull(roomTypes))
 			throw new IllegalArgumentException("List of room types is null");
-//		if (roomTypes.size() == 0)
-//			throw new IllegalArgumentException("List of room types is empty");
 		List<RoomType> validated = roomTypes.stream().filter(roomType 
-				-> Validation.validateRoomType(roomType.getName(), roomType.getPricePerNight(), roomType.getCapacity()))
+				-> Validation.validateRoomType(roomType))
 				.toList();
-//		if (validated.size() == 0)
-//			throw new IllegalArgumentException("No valid data in room types list");
 		roomTypesPersistenceImp.saveRoomTypes(validated);
 	}
 
 	private List<RoomType> loadRoomTypes() throws IOException {
 		List<RoomType> roomTypes = roomTypesPersistenceImp.loadRoomTypes();
-		return roomTypes.stream().filter(roomType 
-				-> Validation.validateRoomType(roomType.getName(), roomType.getPricePerNight(), roomType.getCapacity()))
+		return roomTypes.stream().filter(roomType -> Validation.validateRoomType(roomType))
 			.toList();
 	}
 
-	private void saveRooms(List<Room> rooms) throws IOException {
+	private void saveRooms(Collection<Room> rooms) throws IOException {
 		if (Objects.isNull(rooms))
 			throw new IllegalArgumentException("List of rooms is null");
-//		if (rooms.size() == 0)
-//			throw new IllegalArgumentException("List of rooms is empty");
 		List<Room> validated = rooms.stream().filter(room 
-				-> Validation.validateRoom(room.getRoomNumber(), room.getType())).toList();
-//		if (validated.size() == 0)
-//			throw new IllegalArgumentException("No valid data in rooms list");
+				-> Validation.validateRoom(room)).toList();
 		roomsPersistenceImp.saveRooms(validated);
 	}
 
 	private List<Room> loadRooms() throws IOException {
 		List<Room> rooms = roomsPersistenceImp.loadRooms();
-		return rooms.stream().filter(room -> Validation.validateRoom(room.getRoomNumber(), room.getType())).toList();
+		return rooms.stream().filter(room -> Validation.validateRoom(room)).toList();
 	}
 	
-	private void saveGuests(List<Guest> guests) throws IOException {
+	private void saveGuests(Collection<Guest> guests) throws IOException {
 		if (Objects.isNull(guests))
 			throw new IllegalArgumentException("List of guests is null");
 		if (guests.size() == 0)
 			throw new IllegalArgumentException("List of guests is empty");
 		List<Guest> validated = guests.stream().filter(guest 
-				-> Validation.validateGuest(guest.getId(), guest.getName(), guest.getEmail()))
+				-> Validation.validateGuest(guest))
 				.toList();
-//		if (validated.size() == 0)
-//			throw new IllegalArgumentException("No valid data in guests list");
 		guestsPersistenceImp.saveGuests(validated);
 	}
 
 	private List<Guest> loadGuests() throws IOException {
 		List<Guest> guests = guestsPersistenceImp.loadGuests();
 		return guests.stream().filter(guest 
-				-> Validation.validateGuest(guest.getId(), guest.getName(), guest.getEmail())).toList();
+				-> Validation.validateGuest(guest)).toList();
 	}
 	
-	private void saveBookings(List<Booking> bookings) throws IOException {
+	private void saveBookings(Collection<Booking> bookings) throws IOException {
 		if (Objects.isNull(bookings))
 			throw new IllegalArgumentException("List of bookings is null");
 		if (bookings.size() == 0)
 			throw new IllegalArgumentException("List of bookings is empty");
 		List<Booking> validated = bookings.stream().filter(booking 
-				-> Validation.validateBooking(booking.getGuest(), booking.getRoom(), booking.getCheckIn(), booking.getCheckOut())).toList();
-//		if (validated.size() == 0)
-//			throw new IllegalArgumentException("No valid data in bookings list");
+				-> Validation.validateBooking(booking)).toList();
 		bookingsPersistenceImp.saveBookings(validated);
 	}
 
 	private List<Booking> loadBookings() throws IOException {
 		List<Booking> bookings = bookingsPersistenceImp.loadBookings();
-		return bookings.stream().filter(booking -> Validation.validateBooking(booking.getGuest(), booking.getRoom(), booking.getCheckIn(), booking.getCheckOut()))
+		return bookings.stream().filter(booking -> Validation.validateBooking(booking))
 				.toList();
 	}
 	

@@ -1,7 +1,3 @@
-maps
 date to guest
-add id to roomtype
-createbooking return value
 bookings by localdate
 new methods in service
-analytics to maps

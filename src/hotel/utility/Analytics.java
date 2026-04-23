@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -14,20 +15,28 @@ import java.util.TreeMap;
 
 import hotel.interfaces.IAnalytics;
 import hotel.model.Booking;
+import hotel.model.Room;
 import hotel.model.RoomType;
 import hotel.validation.Validation;
 
 public class Analytics implements IAnalytics {
 	private List<Booking> bookings;
+	private List<Room> rooms;
 	
-	public Analytics(List<Booking> bookings) {
-		if(Objects.isNull(bookings))
-			this.bookings = new ArrayList<Booking>();
+	public Analytics(Collection<Booking> bookings, Collection<Room> rooms) {
+		if(Objects.isNull(bookings)) 
+			this.bookings = new ArrayList<>();
 		else
 			this.bookings = bookings.stream()
-				.filter(booking -> Validation.validateBookingId(booking.getBookingId()))
-				.filter(booking -> Validation.validateBooking(booking.getGuest(), booking.getRoom(), booking.getCheckIn(), booking.getCheckOut()))
+				.filter(booking -> Validation.validateBooking(booking))
 				.toList();
+		if(Objects.isNull(rooms))
+			this.rooms = new ArrayList<>();
+		else
+			this.rooms = rooms.stream()
+				.filter(room -> Validation.validateRoom(room))
+				.toList();
+		
 	}
 
 	@Override
@@ -62,13 +71,23 @@ public class Analytics implements IAnalytics {
 	}
 	
 	@Override
-	public int occupiedRooms() {
-		int count = 0;
-		for (Booking booking : bookings) {
-			if(booking.getCheckIn().isBefore(LocalDate.now()) 
-					&& booking.getCheckOut().isAfter(LocalDate.now()))
-				count++;
-		}
-		return count;
-	}
+    public int getAvailableRoomsCount(LocalDate date) {
+        return (int) rooms.stream().filter(room -> isAvailable(room, date)).count();
+    }
+
+
+    @Override
+    public int getOccupiedRoomsCount(LocalDate date) {
+        return (int) rooms.stream().filter(room -> !isAvailable(room, date)).count();
+    }
+
+
+    private boolean isAvailable(Room room, LocalDate date) {
+        if (bookings == null || bookings.isEmpty()) {
+            return true;
+        }
+        return bookings.stream()
+                .noneMatch(booking -> booking.getRoom().equals(room) && booking.isActiveOn(date));
+    }
+
 }
