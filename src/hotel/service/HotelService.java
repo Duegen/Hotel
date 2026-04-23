@@ -1,6 +1,7 @@
 package hotel.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +20,14 @@ public class HotelService implements IHotelService {
 	private final Map<Integer, Booking> bookings;
 	private final Map<Integer, Room> rooms;
 	private final Map<Integer, Guest> guests;
+	private final Map<LocalDate, List<Booking>> bookingsCheckInDate;
 
 	private HotelService() {
 		roomTypes = new HashMap<>();
 		bookings = new HashMap<>();
 		rooms = new HashMap<>();
-		guests = new TreeMap<>();
+		guests = new HashMap<>();
+		bookingsCheckInDate = new TreeMap<>();
 	}
 
 	public static HotelService getInstance() {
@@ -79,7 +82,7 @@ public class HotelService implements IHotelService {
 	}
 
 	@Override
-	public void addRoom(int roomNumber, RoomType roomType)
+	public Room addRoom(int roomNumber, RoomType roomType)
 			throws RoomAlreadyExistsException, RoomTypeNotFoundException {
 		Room room = new Room(roomNumber, roomType);
 		if (Validation.validateRoom(room)) {
@@ -88,6 +91,7 @@ public class HotelService implements IHotelService {
 			if (!roomTypes.containsKey(roomType.getTypeId()))
 				throw new RoomTypeNotFoundException(room.getType().getTypeId());
 			rooms.put(roomNumber, room);
+			return room;
 		} else
 			throw new IllegalArgumentException("invalid room data");
 	}
@@ -240,28 +244,36 @@ public class HotelService implements IHotelService {
 				.noneMatch(booking -> booking.overlaps(checkIn, checkOut));
 	}
 
+	@SuppressWarnings("unused")
 	@Override
 	public void addBookingToDate(Booking booking) {
-		// TODO Auto-generated method stub
-
+		bookingsCheckInDate.computeIfAbsent(booking.getCheckIn(), k -> new ArrayList<>()).add(booking);
 	}
-
+	
+	@Override
+	public boolean removeBookingFromCheckIn(Booking booking) {
+		List<Booking> list = bookingsCheckInDate.get(booking.getCheckIn());
+		if(list == null)
+			return false;
+		list.removeIf(e->e.getBookingId()==booking.getBookingId());
+		if(list.isEmpty())
+			bookingsCheckInDate.remove(booking.getCheckIn());
+		return true;
+	}
+	
 	@Override
 	public Map<LocalDate, List<Booking>> getBookingsCheckInDate() {
-		// TODO Auto-generated method stub
-		return null;
+		return bookingsCheckInDate;
 	}
 
 	@Override
 	public List<Booking> getBookingsStartOn(LocalDate checkInDate) {
-		// TODO Auto-generated method stub
-		return null;
+		return bookings.values().stream().filter(bk -> bk.getCheckIn().equals(checkInDate)).toList();
 	}
 
 	@Override
 	public List<Booking> getBookingsByGuestsId(int guestId) {
-		// TODO Auto-generated method stub
-		return null;
+		return bookings.values().stream().filter(bk -> bk.getGuest().getId() == guestId).toList();
 	}
 
 }

@@ -2,6 +2,7 @@ package hotel.model;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
 public class Guest implements Serializable {
@@ -60,5 +61,9 @@ public class Guest implements Serializable {
 	
 	public String getPassword() {
 		return password;
+	}
+	
+	public long getAge() {
+		return ChronoUnit.YEARS.between(dateOfBirth, LocalDate.now());
 	}
 }

@@ -17,4 +17,6 @@ public class Constants {
 	public static final double PRICE_PER_NIGHT_MAX = 10000.0;
 	public final static LocalDate MIN_BD = LocalDate.of(1950, 1, 1);
 	public final static LocalDate MAX_BD = LocalDate.now().minusYears(18);
+	public final static int MIN_AGE = 18;
+	public final static int MAX_AGE = 100;
 }

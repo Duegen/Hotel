@@ -135,28 +135,28 @@ public class RandomHotelDataGenerator {
 			try {
 				service.addRoomType(rt);
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println(e.getMessage());
 			}
 		});
 		rooms.stream().forEach(r -> {
 			try {
 				service.addRoom(r.getRoomNumber(), r.getType());
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println(e.getMessage());
 			}
 		});
 		guests.stream().forEach(g -> {
 			try {
 				service.addGuest(g);
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println(e.getMessage());
 			}
 		});
 		bookings.stream().forEach(bk -> {
 			try {
 				service.addBooking(bk);
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println(e.getMessage());
 			}
 		});
 	}

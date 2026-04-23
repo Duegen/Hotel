@@ -112,8 +112,6 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 	private void saveGuests(Collection<Guest> guests) throws IOException {
 		if (Objects.isNull(guests))
 			throw new IllegalArgumentException("List of guests is null");
-		if (guests.size() == 0)
-			throw new IllegalArgumentException("List of guests is empty");
 		List<Guest> validated = guests.stream().filter(guest 
 				-> Validation.validateGuest(guest))
 				.toList();
@@ -129,8 +127,6 @@ public class HotelPersistenceService implements IHotelPersistenceService{
 	private void saveBookings(Collection<Booking> bookings) throws IOException {
 		if (Objects.isNull(bookings))
 			throw new IllegalArgumentException("List of bookings is null");
-		if (bookings.size() == 0)
-			throw new IllegalArgumentException("List of bookings is empty");
 		List<Booking> validated = bookings.stream().filter(booking 
 				-> Validation.validateBooking(booking)).toList();
 		bookingsPersistenceImp.saveBookings(validated);
