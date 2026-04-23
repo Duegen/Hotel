@@ -1,3 +1,0 @@
-date to guest
-bookings by localdate
-new methods in service
