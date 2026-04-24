@@ -56,7 +56,7 @@ public class Displayer {
 				.forEach(roomType -> System.out.println("-" + roomType));
 		else
 			System.out.println("-no suitable room types are found");
-		int minAge = 95, maxAge = 99;
+		int minAge = 25, maxAge = 45;
 		System.out.println("The most popular room types in age range %d-%d:".formatted(minAge, maxAge));
 		Optional<List<RoomType>> roomTypesInAgeRange = analytics.getMostPopularRoomTypesForAgeRange(minAge, maxAge);
 		if(roomTypesInAgeRange.isEmpty())

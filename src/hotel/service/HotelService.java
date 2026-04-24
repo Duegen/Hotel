@@ -2,7 +2,6 @@ package hotel.service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,10 +22,10 @@ public class HotelService implements IHotelService {
 	private final Map<LocalDate, List<Booking>> bookingsCheckInDate;
 
 	private HotelService() {
-		roomTypes = new HashMap<>();
-		bookings = new HashMap<>();
-		rooms = new HashMap<>();
-		guests = new HashMap<>();
+		roomTypes = new TreeMap<>();
+		bookings = new TreeMap<>();
+		rooms = new TreeMap<>();
+		guests = new TreeMap<>();
 		bookingsCheckInDate = new TreeMap<>();
 	}
 
@@ -139,6 +138,7 @@ public class HotelService implements IHotelService {
 			if (bookings.containsKey(booking.getBookingId()))
 				throw new BookingAlreadyExistsException(booking.getBookingId());
 			bookings.put(booking.getBookingId(), booking);
+			addBookingToDate(booking);
 		} else
 			throw new IllegalArgumentException("invalid booking data");
 	}
@@ -147,7 +147,7 @@ public class HotelService implements IHotelService {
 	public Booking createBooking(Guest guest, Room room, LocalDate checkIn, LocalDate checkOut)
 			throws BookingAlreadyExistsException, GuestNotFoundException, RoomNotFoundException,
 			NoFreeBookingIdException, RoomUnAvailableException {
-		int bookingId = findFreeId(bookings, Constants.BOOKING_MIN_ID, Constants.BOOKING_MIN_ID);
+		int bookingId = findFreeId(bookings, Constants.BOOKING_MIN_ID, Constants.BOOKING_MAX_ID);
 		if (bookingId == -1)
 			throw new NoFreeBookingIdException();
 		Booking booking = new Booking(bookingId, guest, room, checkIn, checkOut);
@@ -159,6 +159,7 @@ public class HotelService implements IHotelService {
 			if (!isRoomAvailable(room, checkIn, checkOut))
 				throw new RoomUnAvailableException(room.getRoomNumber(), checkIn, checkOut);
 			bookings.put(bookingId, booking);
+			addBookingToDate(booking);
 			return booking;
 		} else
 			throw new IllegalArgumentException("invalid booking data");
@@ -229,6 +230,7 @@ public class HotelService implements IHotelService {
 				&& LocalDate.now().isBefore(booking.getCheckOut());
 		if (isBookingActive)
 			throw new RemoveBookingActiveException(booking);
+		removeBookingFromCheckIn(booking);
 		return bookings.remove(bookingId);
 	}
 
