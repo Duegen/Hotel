@@ -2,15 +2,17 @@ package hotel.interfaces;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
+import hotel.model.Booking;
 import hotel.model.RoomType;
 
 public interface IAnalytics {
-	int bookingsNumber();
 	double averageBookingPrice();
-	Optional<List<RoomType>> mostPopularRoomTypes();
+	List<RoomType> mostPopularRoomTypes();
 	int getAvailableRoomsCount(LocalDate date);
 	int getOccupiedRoomsCount(LocalDate date);
-	Optional<List<RoomType>> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge);
+	List<RoomType> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge);
+	int bookingsNumber();
+	Map<Integer, Booking> getBookings();
 }

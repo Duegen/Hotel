@@ -3,23 +3,36 @@ package hotel.model;
 import java.io.Serializable;
 import java.util.Objects;
 
+import hotel.service.dto.input.RoomTypeCreateDTO;
+
 public class RoomType implements Serializable{
 	private static final long serialVersionUID = 1L;
 	private int typeId;
-	private String name;
+	private String category;
 	private double pricePerNight;
 	private int capacity;
 	
-	public RoomType(int typeId, String name, double pricePerNight, int capacity) {
+	public RoomType(int typeId, RoomTypeCreateDTO dto) {
 		this.typeId = typeId;
-		this.name = name;
-		this.pricePerNight = pricePerNight;
-		this.capacity = capacity;
+		category = dto.category();
+		pricePerNight = dto.pricePerNight();
+		capacity = dto.capacity();
+	}
+
+	private RoomType(RoomType roomType) {
+		typeId = roomType.typeId;
+		category = roomType.category;
+		pricePerNight = roomType.pricePerNight;
+		capacity = roomType.capacity;
+	}
+
+	public RoomType() {
+
 	}
 
 	@Override
 	public String toString() {
-		return "RoomType [typeId=" + typeId + ", name=" + name + ", pricePerNight=" + pricePerNight + ", capacity=" + capacity + "]";
+		return "RoomType [typeId=" + typeId + ", category=" + category + ", pricePerNight=" + pricePerNight + ", capacity=" + capacity + "]";
 	}
 
 	@Override
@@ -38,20 +51,20 @@ public class RoomType implements Serializable{
 		return typeId == other.typeId;
 	}
 	
-	public boolean isSame(RoomType other) {
+	public boolean isDuplicate(RoomType other) {
 		if(Objects.isNull(other))
 			return false;
 		return capacity == other.capacity
                 && Double.doubleToLongBits(pricePerNight) == Double.doubleToLongBits(other.pricePerNight)
-                && Objects.equals(name, other.name);
+                && Objects.equals(category, other.category);
 	}
 	
 	public int getTypeId() {
 		return typeId;
 	}
 	
-	public String getName() {
-		return name;
+	public String getCategory() {
+		return category;
 	}
 
 	public double getPricePerNight() {
@@ -62,7 +75,7 @@ public class RoomType implements Serializable{
 		return capacity;
 	}
 
-	public Object toString2() {
-		return "RoomType [name=" + name + ", pricePerNight=" + pricePerNight + ", capacity=" + capacity + "]";
+	public RoomType copy() {
+		return new RoomType(this);
 	}
 }

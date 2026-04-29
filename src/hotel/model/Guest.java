@@ -1,9 +1,16 @@
 package hotel.model;
 
 import java.io.Serializable;
+import java.security.SecureRandom;
+import java.security.spec.KeySpec;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
+import hotel.service.dto.input.GuestCreateDTO;
 
 public class Guest implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -12,16 +19,37 @@ public class Guest implements Serializable {
 	private String name;
 	private String email;
 	private LocalDate dateOfBirth; 
-	private transient String password;
+	private String password;
 	
-	public Guest(int id, String name, String email, LocalDate dateOfBirth, String password) {
+	public Guest(int id, GuestCreateDTO dto, String algorithm, int keyLength) {
 		this.id = id;
-		this.name = name;
-		this.email = email;
-		this.dateOfBirth = dateOfBirth;
-		this.password = password;
+		name = dto.name();
+		email = dto.email();
+		dateOfBirth = dto.dateOfBirth();
+		byte[] salt = new byte[16];
+		SecureRandom random = new SecureRandom();
+		random.nextBytes(salt);
+		KeySpec spec = new PBEKeySpec(dto.password().toCharArray(), salt, 65536, keyLength);
+		try {
+			SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
+			this.password = factory.generateSecret(spec).getEncoded().toString();
+		} catch (Exception e) {
+			this.password = dto.password();
+		}
 	}
 	
+	private Guest(Guest guest) {
+		id = guest.getId();
+		name = guest.getName();
+		email = guest.getEmail();
+		dateOfBirth = guest.getDateOfBirth();
+		password = guest.getPassword();
+	}
+
+	public Guest() {
+		id = 0;
+	}
+
 	@Override
 	public String toString() {
 		return "Guest [id=" + id + ", name=" + name + ", email=" + email + ", date of birth=" + dateOfBirth + ", password=" + password + "]";
@@ -65,5 +93,9 @@ public class Guest implements Serializable {
 	
 	public long getAge() {
 		return ChronoUnit.YEARS.between(dateOfBirth, LocalDate.now());
+	}
+
+	public Guest copy() {
+		return new Guest(this);
 	}
 }

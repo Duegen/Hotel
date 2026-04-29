@@ -1,141 +1,182 @@
 package hotel.service;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import hotel.interfaces.IBookingsPersistence;
-import hotel.interfaces.IGuestsPersistence;
+import hotel.HotelApplConstants;
+import hotel.HotelApplContext;
 import hotel.interfaces.IHotelPersistenceService;
 import hotel.interfaces.IHotelService;
-import hotel.interfaces.IRoomTypesPersistence;
-import hotel.interfaces.IRoomsPersistence;
 import hotel.model.*;
-import hotel.persistence.BookingsPersistenceEmbeddedImp;
-import hotel.persistence.GuestPersistenceEmbeddedImp;
-import hotel.persistence.RoomTypesPersistenceEmbeddedImp;
-import hotel.persistence.RoomsPersistenceEmbeddedImp;
 import hotel.validation.Validation;
+import hotel.validation.exceptions.ValidationException;
 
-public class HotelPersistenceService implements IHotelPersistenceService{
-	private final IHotelService serviceInstance;
+public class HotelPersistenceService implements IHotelPersistenceService {
+	private final HotelApplContext context;
 	private static HotelPersistenceService instance;
-	private IBookingsPersistence bookingsPersistenceImp = BookingsPersistenceEmbeddedImp.getInstance();
-	private IRoomTypesPersistence roomTypesPersistenceImp = RoomTypesPersistenceEmbeddedImp.getInstance();
-	private IRoomsPersistence roomsPersistenceImp = RoomsPersistenceEmbeddedImp.getInstance();
-	private IGuestsPersistence guestsPersistenceImp = GuestPersistenceEmbeddedImp.getInstance();
-	
-	private HotelPersistenceService(IHotelService service) {
-		if(Objects.isNull(service)) throw new IllegalArgumentException("service is null");
-		this.serviceInstance = service;
+
+	private HotelPersistenceService(HotelApplContext context) {
+		this.context = context;
 	}
 
-	public static HotelPersistenceService getInstance(IHotelService service) {
+	public static HotelPersistenceService getInstance(HotelApplContext context) {
 		if (instance == null)
-			instance = new HotelPersistenceService(service);
+			instance = new HotelPersistenceService(context);
 		return instance;
 	}
-	
+
 	public void saveHotelData() throws IOException {
-			saveRoomType(serviceInstance.getRoomTypes().values());
-			saveRooms(serviceInstance.getRooms().values());
-			saveGuests(serviceInstance.getGuests().values());
-			saveBookings(serviceInstance.getBookings().values());
+		IHotelService service = context.getHotelService();
+		saveRoomTypes(service.getRoomTypes().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOMTYPE_FILE));
+		saveRooms(service.getRooms().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOM_FILE));
+		saveGuests(service.getGuests().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.GUEST_FILE));
+		saveBookings(service.getBookings().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.BOOKING_FILE));
 	}
 
-	public boolean loadHotelData() throws IOException{
-		List<RoomType> roomTypesLoaded = loadRoomTypes();
-		List<Room> roomsLoaded = loadRooms();
-		List<Guest> guestsLoaded = loadGuests();
-		List<Booking> bookingsLoaded = loadBookings();
-		
+	public boolean loadHotelData() throws IOException {
+		IHotelService service = context.getHotelService();
+		List<RoomType> roomTypesLoaded = loadRoomTypes(Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOMTYPE_FILE));
+		List<Room> roomsLoaded = loadRooms(Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOM_FILE));
+		List<Guest> guestsLoaded = loadGuests(Paths.get(HotelApplConstants.DIR, HotelApplConstants.GUEST_FILE));
+		List<Booking> bookingsLoaded = loadBookings(Paths.get(HotelApplConstants.DIR, HotelApplConstants.BOOKING_FILE));
+
 		roomTypesLoaded.stream().forEach(rt -> {
 			try {
-				serviceInstance.addRoomType(rt);
+				service.addRoomType(rt);
 			} catch (Exception e) {
-				
+				System.out.println(e.getMessage());
 			}
 		});
 		roomsLoaded.stream().forEach(r -> {
 			try {
-				serviceInstance.addRoom(r.getRoomNumber(), r.getType());
+				service.addRoom(r);
 			} catch (Exception e) {
-				
+				System.out.println(e.getMessage());
 			}
 		});
 		guestsLoaded.stream().forEach(g -> {
 			try {
-				serviceInstance.addGuest(g);
+				service.addGuest(g);
 			} catch (Exception e) {
-				
+				System.out.println(e.getMessage());
 			}
 		});
 		bookingsLoaded.stream().forEach(bk -> {
 			try {
-				serviceInstance.addBooking(bk);
+				service.addBooking(bk);
 			} catch (Exception e) {
-				
+				System.out.println(e.getMessage());
 			}
 		});
 		return true;
 	}
 
-	private void saveRoomType(Collection<RoomType> roomTypes) throws IOException {
+	private void saveRoomTypes(Collection<RoomType> roomTypes, Path dataFile) throws IOException {
 		if (Objects.isNull(roomTypes))
 			throw new IllegalArgumentException("List of room types is null");
-		List<RoomType> validated = roomTypes.stream().filter(roomType 
-				-> Validation.validateRoomType(roomType))
-				.toList();
-		roomTypesPersistenceImp.saveRoomTypes(validated);
+		List<RoomType> validated = roomTypes.stream().filter(roomType -> {
+			try {
+				return Validation.validate(roomType);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
+		context.getRoomTypePersistence().saveRoomTypes(validated, dataFile);
 	}
 
-	private List<RoomType> loadRoomTypes() throws IOException {
-		List<RoomType> roomTypes = roomTypesPersistenceImp.loadRoomTypes();
-		return roomTypes.stream().filter(roomType -> Validation.validateRoomType(roomType))
-			.toList();
+	private List<RoomType> loadRoomTypes(Path dataFile) throws IOException {
+		List<RoomType> roomTypes = context.getRoomTypePersistence().loadRoomTypes(dataFile);
+		return roomTypes.stream().filter(roomType -> {
+			try {
+				return Validation.validate(roomType);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
 	}
 
-	private void saveRooms(Collection<Room> rooms) throws IOException {
+	private void saveRooms(Collection<Room> rooms, Path dataFile) throws IOException {
 		if (Objects.isNull(rooms))
 			throw new IllegalArgumentException("List of rooms is null");
-		List<Room> validated = rooms.stream().filter(room 
-				-> Validation.validateRoom(room)).toList();
-		roomsPersistenceImp.saveRooms(validated);
+		List<Room> validated = rooms.stream().filter(room -> {
+			try {
+				return Validation.validate(room);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
+		context.getRoomPersistence().saveRooms(validated, dataFile);
 	}
 
-	private List<Room> loadRooms() throws IOException {
-		List<Room> rooms = roomsPersistenceImp.loadRooms();
-		return rooms.stream().filter(room -> Validation.validateRoom(room)).toList();
+	private List<Room> loadRooms(Path dataFile) throws IOException {
+		List<Room> rooms = context.getRoomPersistence().loadRooms(dataFile);
+		return rooms.stream().filter(room -> {
+			try {
+				return Validation.validate(room);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
 	}
-	
-	private void saveGuests(Collection<Guest> guests) throws IOException {
+
+	private void saveGuests(Collection<Guest> guests, Path dataFile) throws IOException {
 		if (Objects.isNull(guests))
 			throw new IllegalArgumentException("List of guests is null");
-		List<Guest> validated = guests.stream().filter(guest 
-				-> Validation.validateGuest(guest))
-				.toList();
-		guestsPersistenceImp.saveGuests(validated);
+		List<Guest> validated = guests.stream().filter(guest -> {
+			try {
+				return Validation.validate(guest);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
+		context.getGuestPersistence().saveGuests(validated, dataFile);
 	}
 
-	private List<Guest> loadGuests() throws IOException {
-		List<Guest> guests = guestsPersistenceImp.loadGuests();
-		return guests.stream().filter(guest 
-				-> Validation.validateGuest(guest)).toList();
+	private List<Guest> loadGuests(Path dataFile) throws IOException {
+		List<Guest> guests = context.getGuestPersistence().loadGuests(dataFile);
+		return guests.stream().filter(guest -> {
+			try {
+				return Validation.validate(guest);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
 	}
-	
-	private void saveBookings(Collection<Booking> bookings) throws IOException {
+
+	private void saveBookings(Collection<Booking> bookings, Path dataFile) throws IOException {
 		if (Objects.isNull(bookings))
 			throw new IllegalArgumentException("List of bookings is null");
-		List<Booking> validated = bookings.stream().filter(booking 
-				-> Validation.validateBooking(booking)).toList();
-		bookingsPersistenceImp.saveBookings(validated);
+		List<Booking> validated = bookings.stream().filter(booking -> {
+			try {
+				return Validation.validate(booking);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
+		context.getBookingPersistence().saveBookings(validated, dataFile);
 	}
 
-	private List<Booking> loadBookings() throws IOException {
-		List<Booking> bookings = bookingsPersistenceImp.loadBookings();
-		return bookings.stream().filter(booking -> Validation.validateBooking(booking))
-				.toList();
+	private List<Booking> loadBookings(Path dataFile) throws IOException {
+		List<Booking> bookings = context.getBookingPersistence().loadBookings(dataFile);
+		return bookings.stream().filter(booking -> {
+			try {
+				return Validation.validate(booking);
+			} catch (ValidationException e) {
+				System.out.println(e.getMessage());
+				return false;
+			}
+		}).toList();
 	}
-	
+
 }

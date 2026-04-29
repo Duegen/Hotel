@@ -3,20 +3,32 @@ package hotel.model;
 import java.io.Serializable;
 import java.util.Objects;
 
+import hotel.service.dto.input.RoomCreateDTO;
+
 public class Room implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
-	private int roomNumber;
-	private RoomType type;
+	private final int roomNumber;
+	private int typeId;
 	
-	public Room(int roomNumber, RoomType type) {
-		this.roomNumber = roomNumber;
-		this.type = type;
+	public Room(RoomCreateDTO dto) {
+		roomNumber = dto.roomNumber();
+		typeId = dto.roomTypeId();
+	}
+
+	public Room() {
+		this.roomNumber = 0;
+		
+	}
+
+	private Room(Room room) {
+		roomNumber = room.roomNumber;
+		typeId = room.typeId;
 	}
 
 	@Override
 	public String toString() {
-		return "Room [roomNumber=" + roomNumber + ", type=" + type + "]";
+		return "Room [roomNumber=" + roomNumber + ", typeId=" + typeId + "]";
 	}
 	
 	@Override
@@ -39,7 +51,11 @@ public class Room implements Serializable{
 		return roomNumber;
 	}
 
-	public RoomType getType() {
-		return type;
+	public int getType() {
+		return typeId;
+	}
+
+	public Room copy() {
+		return new Room(this);
 	}
 }

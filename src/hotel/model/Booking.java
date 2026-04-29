@@ -4,35 +4,39 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Objects;
 
+import hotel.service.dto.input.BookingCreateDTO;
+
 public class Booking implements Serializable{
 	private static final long serialVersionUID = 1L;
-	private int bookingId;
-	private Guest guest;
-	private Room room;
+	private final int bookingId;
+	private int guestId;
+	private int roomNumber;
 	private LocalDate checkIn;
 	private LocalDate checkOut;
 	
-	public Booking(int bookingId, Guest guest, Room room, LocalDate checkIn, LocalDate checkOut) {
-		if (Objects.isNull(guest)) 
-            throw new IllegalArgumentException("Guest can not be null");
-        if (Objects.isNull(room)) 
-            throw new IllegalArgumentException("Room can not be null");
-        if (Objects.isNull(checkIn) || Objects.isNull(checkOut)) 
-            throw new IllegalArgumentException("Check-in and check-out dates can not be null");
-        if (!checkOut.isAfter(checkIn)) 
-            throw new IllegalArgumentException("Check-out must be after check-in");
-        if(bookingId <= 0)
-        	throw new IllegalArgumentException("Booking id must be positive");
+	public Booking(int bookingId, BookingCreateDTO dto) {
 		this.bookingId = bookingId;
-		this.guest = guest;
-		this.room = room;
-		this.checkIn = checkIn;
-		this.checkOut = checkOut;
+		this.guestId = dto.guestId();
+		this.roomNumber = dto.roomNumber();
+		this.checkIn = dto.checkIn();
+		this.checkOut = dto.checkOut();
+	}
+
+	private Booking(Booking booking) {
+		bookingId = booking.bookingId;
+		guestId = booking.guestId;
+		roomNumber = booking.roomNumber;
+		checkIn = booking.checkIn;
+		checkOut = booking.checkOut;
+	}
+
+	public Booking() {
+		this.bookingId = 0;
 	}
 
 	@Override
 	public String toString() {
-		return "Booking [bookingId=" + bookingId + ", guest=" + guest + ", room=" + room + ", checkIn=" + checkIn
+		return "Booking [bookingId=" + bookingId + ", guestId=" + guestId + ", roomId=" + roomNumber + ", checkIn=" + checkIn
 				+ ", checkOut=" + checkOut + "]";
 	}
 
@@ -57,12 +61,12 @@ public class Booking implements Serializable{
 		return bookingId;
 	}
 
-	public Guest getGuest() {
-		return guest;
+	public int getGuestId() {
+		return guestId;
 	}
 
-	public Room getRoom() {
-		return room;
+	public int getRoomNumber() {
+		return roomNumber;
 	}
 
 	public LocalDate getCheckIn() {
@@ -80,5 +84,9 @@ public class Booking implements Serializable{
 	public boolean overlaps(LocalDate requestedCheckIn, LocalDate requestedCheckOut) {
         return requestedCheckIn.isBefore(checkOut) && requestedCheckOut.isAfter(checkIn);
     }
+
+	public Booking copy() {
+		return new Booking(this);
+	}
 
 }

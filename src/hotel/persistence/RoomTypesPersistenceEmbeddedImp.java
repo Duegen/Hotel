@@ -8,7 +8,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,10 +28,11 @@ public class RoomTypesPersistenceEmbeddedImp implements IRoomTypesPersistence {
 	}
 
 	@Override
-	public void saveRoomTypes(List<RoomType> roomTypes) throws IOException {
+	public void saveRoomTypes(List<RoomType> roomTypes, Path dataFile) throws IOException {
 		if (Objects.isNull(roomTypes))
 			throw new IllegalArgumentException("room types list can not be null");
-		Path dataFile = Paths.get(Constants.DIR, Constants.ROOMTYPE_FILE);
+		if(Objects.isNull(dataFile))
+			throw new IllegalArgumentException("file path can not be null");
 		Files.createDirectories(dataFile.getParent());
 		try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(dataFile.toString()))) {
 				out.writeObject(roomTypes);
@@ -44,8 +44,7 @@ public class RoomTypesPersistenceEmbeddedImp implements IRoomTypesPersistence {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<RoomType> loadRoomTypes() throws IOException {
-		Path dataFile = Paths.get(Constants.DIR, Constants.ROOMTYPE_FILE);
+	public List<RoomType> loadRoomTypes(Path dataFile) throws IOException {
 		if (!Files.exists(dataFile))
 			throw new FileNotFoundException("room types data file not found");
 		if (Files.size(dataFile) == 0)

@@ -8,7 +8,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,10 +28,9 @@ public class RoomsPersistenceEmbeddedImp implements IRoomsPersistence {
 	}
 
 	@Override
-	public void saveRooms(List<Room> rooms) throws IOException {
+	public void saveRooms(List<Room> rooms, Path dataFile) throws IOException {
 		if (Objects.isNull(rooms))
 			throw new IllegalArgumentException("rooms list can not be null");
-		Path dataFile = Paths.get(Constants.DIR, Constants.ROOM_FILE);
 		Files.createDirectories(dataFile.getParent());
 		try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(dataFile.toString()))) {
 			out.writeObject(rooms);
@@ -43,8 +41,7 @@ public class RoomsPersistenceEmbeddedImp implements IRoomsPersistence {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public List<Room> loadRooms() throws IOException {
-		Path dataFile = Paths.get(Constants.DIR, Constants.ROOM_FILE);
+	public List<Room> loadRooms(Path dataFile) throws IOException {
 		if (!Files.exists(dataFile))
 			throw new FileNotFoundException("rooms data file not found");
 		if (Files.size(dataFile) == 0)

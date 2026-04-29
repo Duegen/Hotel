@@ -3,12 +3,12 @@ package hotel.utility;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
-
 import hotel.interfaces.IAnalytics;
+import hotel.interfaces.IHotelService;
 import hotel.model.*;
 
 public class Displayer {
+	
 	public static void displayRoomTypes(Collection<RoomType> roomTypes) {
 		System.out.println("-----[Room types list]-----------------------------------");
 		if(roomTypes.isEmpty())
@@ -45,24 +45,24 @@ public class Displayer {
 		System.out.println();
 	}
 	
-	public static void displayAnalitics(Collection<Booking> bookings, Collection<Room> rooms) {
-		IAnalytics analytics = new Analytics(bookings, rooms);
+	public static void displayAnalitics(IHotelService service) {
+		IAnalytics analytics = new Analytics(service);
 		System.out.println("-----[Analitics]-----------------------------------------");
 		System.out.println("Total number of bookings: " + analytics.bookingsNumber());
 		System.out.println("Average booking price: %.2f".formatted(analytics.averageBookingPrice()));
 		System.out.println("The most popular room types: ");
-		if(bookings.size() !=0)
-			analytics.mostPopularRoomTypes().get().stream()
+		if(analytics.getBookings().size() != 0)
+			analytics.mostPopularRoomTypes().stream()
 				.forEach(roomType -> System.out.println("-" + roomType));
 		else
 			System.out.println("-no suitable room types are found");
 		int minAge = 25, maxAge = 45;
 		System.out.println("The most popular room types in age range %d-%d:".formatted(minAge, maxAge));
-		Optional<List<RoomType>> roomTypesInAgeRange = analytics.getMostPopularRoomTypesForAgeRange(minAge, maxAge);
+		List<RoomType> roomTypesInAgeRange = analytics.getMostPopularRoomTypesForAgeRange(minAge, maxAge);
 		if(roomTypesInAgeRange.isEmpty())
 			System.out.println("-no suitable room types are found");
 		else	
-			roomTypesInAgeRange.get().stream()
+			roomTypesInAgeRange.stream()
 				.forEach(roomType -> System.out.println("-" + roomType));
 		int available = analytics.getAvailableRoomsCount(LocalDate.now());
 		System.out.println("Number of availble rooms on date %s: %d".formatted(LocalDate.now(), available));

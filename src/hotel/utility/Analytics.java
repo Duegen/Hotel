@@ -2,40 +2,55 @@ package hotel.utility;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import hotel.interfaces.IAnalytics;
-import hotel.model.Booking;
-import hotel.model.Room;
-import hotel.model.RoomType;
+import hotel.interfaces.IHotelService;
+import hotel.model.*;
 import hotel.validation.Constants;
-import hotel.validation.Validation;
 
 public class Analytics implements IAnalytics {
-	private List<Booking> bookings;
-	private List<Room> rooms;
-
-	public Analytics(Collection<Booking> bookings, Collection<Room> rooms) {
-		if (Objects.isNull(bookings))
-			this.bookings = new ArrayList<>();
-		else
-			this.bookings = bookings.stream().filter(booking -> Validation.validateBooking(booking)).toList();
-		if (Objects.isNull(rooms))
-			this.rooms = new ArrayList<>();
-		else
-			this.rooms = rooms.stream().filter(room -> Validation.validateRoom(room)).toList();
+	private final Map<Integer, RoomType> roomTypes;
+	private final Map<Integer, Room> rooms;
+	private final Map<Integer, Guest> guests;
+	private final Map<Integer, Booking> bookings;
+	
+	public Analytics(IHotelService service) {
+		roomTypes = service.getRoomTypes();
+		rooms = service.getRooms();
+		guests = service.getGuests();
+		bookings = service.getBookings();
 	}
+
+	
+	
+	public Map<Integer, RoomType> getRoomTypes() {
+		return roomTypes;
+	}
+
+
+
+	public Map<Integer, Room> getRooms() {
+		return rooms;
+	}
+
+
+
+	public Map<Integer, Guest> getGuests() {
+		return guests;
+	}
+
+
+	@Override
+	public Map<Integer, Booking> getBookings() {
+		return bookings;
+	}
+
+
 
 	@Override
 	public int bookingsNumber() {
@@ -46,52 +61,51 @@ public class Analytics implements IAnalytics {
 	public double averageBookingPrice() {
 		if (bookings.size() == 0)
 			return 0.;
-		OptionalDouble result = bookings.stream()
+		OptionalDouble result = bookings.values().stream()
 				.mapToDouble(booking -> ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut())
-						* booking.getRoom().getType().getPricePerNight())
+						* roomTypes.get(rooms.get(booking.getRoomNumber()).getType()).getPricePerNight())
 				.average();
 		return result.getAsDouble();
 	}
 
 	@Override
-	public Optional<List<RoomType>> mostPopularRoomTypes() {
-		return getMostPopularRoomStream(bookings.stream());
+	public List<RoomType> mostPopularRoomTypes() {
+		return getMostPopularRoomStream(bookings.values().stream());
 	}
 
 	@Override
+	public List<RoomType> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge) {
+		if (minAge < Constants.MIN_AGE || minAge > Constants.MAX_AGE || maxAge > Constants.MAX_AGE || maxAge < minAge)
+			throw new IllegalArgumentException("invalid age params");
+		return getMostPopularRoomStream(
+				bookings.values().stream().filter(bk -> guests.get(bk.getGuestId()).getAge() >= minAge
+						&& guests.get(bk.getGuestId()).getAge() <= maxAge));
+	}
+
+	private List<RoomType> getMostPopularRoomStream(Stream<Booking> bookingStream) {
+		Map<Integer, Long> counts = bookingStream.collect(
+				Collectors.groupingBy(booking -> rooms.get(booking.getRoomNumber()).getType(), Collectors.counting()));
+		long max = counts.values().stream().mapToLong(Long::longValue).max().orElse(0);
+		return counts.entrySet().stream().filter(entry -> entry.getValue() == max)
+				.map(entry -> roomTypes.get(entry.getKey())).toList();
+	}
+	
+	@Override
 	public int getAvailableRoomsCount(LocalDate date) {
-		return (int) rooms.stream().filter(room -> isAvailable(room, date)).count();
+		return (int) rooms.values().stream().filter(room -> isAvailable(room, date)).count();
 	}
 
 	@Override
 	public int getOccupiedRoomsCount(LocalDate date) {
-		return (int) rooms.stream().filter(room -> !isAvailable(room, date)).count();
+		return (int) rooms.values().stream().filter(room -> !isAvailable(room, date)).count();
 	}
 
 	private boolean isAvailable(Room room, LocalDate date) {
 		if (bookings == null || bookings.isEmpty()) {
 			return true;
 		}
-		return bookings.stream().noneMatch(booking -> booking.getRoom().equals(room) && booking.isActiveOn(date));
+		return bookings.values().stream().noneMatch(booking -> booking.getRoomNumber() == room.getRoomNumber() && booking.isActiveOn(date));
 	}
 
-	@Override
-	public Optional<List<RoomType>> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge) {
-		if(minAge < Constants.MIN_AGE || minAge > Constants.MAX_AGE || maxAge > Constants.MAX_AGE || maxAge < minAge)
-			throw new IllegalArgumentException("invalid age params");
-		return getMostPopularRoomStream(bookings.stream().filter(bk -> bk.getGuest().getAge() >= minAge && bk.getGuest().getAge() <= maxAge));
-	}
-
-	private Optional<List<RoomType>> getMostPopularRoomStream(Stream<Booking> bookingStream) {
-		Map<RoomType, Integer> temp = new HashMap<>();
-		bookingStream.forEach(
-				booking -> temp.merge(booking.getRoom().getType(), 1, (oldValue, newValue) -> oldValue + newValue));
-		TreeMap<Integer, List<RoomType>> result = new TreeMap<>(Comparator.reverseOrder());
-		temp.entrySet().stream().forEach(entry -> result.merge(entry.getValue(),
-				new ArrayList<RoomType>(Arrays.asList(entry.getKey())), (oldValue, newValue) -> {
-					oldValue.addAll(newValue);
-					return oldValue;
-				}));
-		return result.isEmpty() ? Optional.empty() : Optional.of(result.firstEntry().getValue());
-	}
+	
 }
