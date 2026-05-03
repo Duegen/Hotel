@@ -6,9 +6,7 @@ import java.util.List;
 import hotel.HotelApplContext;
 
 import hotel.items.HotelItem;
-import hotel.model.Guest;
 import hotel.service.dto.input.BookingIdDTO;
-import hotel.service.dto.input.GuestLoginDTO;
 import hotel.service.dto.output.BookingDTO;
 
 public class CancelMyBookingItem extends HotelItem {
@@ -24,12 +22,8 @@ public class CancelMyBookingItem extends HotelItem {
     @Override
     public void perform() {
     	try {
-			GuestLoginDTO login = login();
-			Guest guest = hotelService.login(login);
-			inOut.outputlLine("Welcome guest '%s'".formatted(guest.getName()));
-			
 			inOut.outputlLine("Your bookings:");
-			List<BookingDTO> activeBookings = hotelService.getBookingsForGuest(guest.getId())
+			List<BookingDTO> activeBookings = hotelService.getBookingsForGuest(context.getGuestId())
 					.stream().filter(bk -> LocalDate.now().isBefore(bk.checkIn())).toList();
 			if (activeBookings.isEmpty()) {
 			    inOut.outputlLine("No bookings available for canceling are found");
@@ -40,7 +34,8 @@ public class CancelMyBookingItem extends HotelItem {
 			Integer bookingId = inOut.inputInteger("Enter booking id to cancel");
 			
 			BookingDTO removed = hotelService.cancelBooking(new BookingIdDTO(bookingId));
-			inOut.outputlLine("Booking cancelled: " + removed);
+			inOut.outputlLine("Booking canceled: room number - %d, category - %s, price per night - %.2f, capacity - %d, check in - %s, check out - %s"
+					.formatted(removed.roomNumber(), removed.caregory(), removed.pricePerNight(), removed.capacity(), removed.checkIn(), removed.checkOut()));
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());
 		}

@@ -1,25 +1,40 @@
 package hotel.items.accountant;
 
+import java.util.List;
+
 import hotel.HotelApplContext;
 import hotel.items.HotelItem;
+import hotel.service.dto.output.RoomTypeDTO;
 
 public class ShowMostPopularRoomForRangeAgeItem extends HotelItem {
 
-	protected ShowMostPopularRoomForRangeAgeItem(HotelApplContext context) {
+	public ShowMostPopularRoomForRangeAgeItem(HotelApplContext context) {
 		super(context);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public String displayName() {
-		// TODO Auto-generated method stub
-		return null;
+		return "Show most popular room for age range";
 	}
 
 	@Override
 	public void perform() {
-		// TODO Auto-generated method stub
-
+		Integer minAge = inOut.inputInteger("Enter minimum age");
+		if(minAge==null)
+			return;
+		Integer maxAge = inOut.inputInteger("Enter maximum age");
+		if(maxAge==null)
+			return;
+		List<RoomTypeDTO> roomTypes = analyticsService.getMostPopularRoomTypesForAgeRange(minAge, maxAge);
+		if(roomTypes==null || roomTypes.size()==0) {
+			inOut.outputlLine("No rooms found for selected age range");
+			return;
+		}
+		inOut.outputlLine("Most popular room types for age range "+minAge+ " - "+ maxAge);
+		for(RoomTypeDTO roomType : roomTypes)
+			inOut.outputlLine("room type id - %d, category - %s, price per night - %.2f, capacity - %d"
+					.formatted(roomType.roomTypeId(), roomType.category(), roomType.pricePerNight(), roomType.capacity()));
 	}
+
 
 }

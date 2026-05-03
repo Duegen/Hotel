@@ -120,7 +120,7 @@ public class Validation {
 	public static boolean validatePassword(String password) throws ValidationException {
 		if(Objects.isNull(password))
 			throw new DTOGuestPasswordNullException();
-		if(password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{8,}"))
+		if(!password.matches("(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d]{8,}"))
 			throw new DTOGuestPasswordFormatException();
 		return true;
 	}
@@ -130,7 +130,7 @@ public class Validation {
 			throw new DTOLoginNullException();
 		if(Objects.isNull(dto.email()) || Objects.isNull(dto.password()))
 			throw new DTOLoginNullException();
-		if(!dto.email().matches("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,6}"))
+		if(!dto.email().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$"))
 			throw new DTOGuestEmailFormatException(dto.email());
 		validatePassword(dto.password());	
 	}

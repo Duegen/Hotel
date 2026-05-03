@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.Objects;
 
 import javax.crypto.SecretKeyFactory;
@@ -26,15 +27,18 @@ public class Guest implements Serializable {
 		name = dto.name();
 		email = dto.email();
 		dateOfBirth = dto.dateOfBirth();
+		
 		byte[] salt = new byte[16];
 		SecureRandom random = new SecureRandom();
 		random.nextBytes(salt);
+
 		KeySpec spec = new PBEKeySpec(dto.password().toCharArray(), salt, 65536, keyLength);
 		try {
-			SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
-			this.password = factory.generateSecret(spec).getEncoded().toString();
+		    SecretKeyFactory factory = SecretKeyFactory.getInstance(algorithm);
+		    byte[] hash = factory.generateSecret(spec).getEncoded();
+		    this.password = Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash);
 		} catch (Exception e) {
-			this.password = dto.password();
+			this.password = "Password1";
 		}
 	}
 	

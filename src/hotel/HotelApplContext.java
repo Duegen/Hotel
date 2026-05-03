@@ -4,6 +4,7 @@ import cli.Inputoutput;
 import hotel.interfaces.IAnalytics;
 import hotel.interfaces.IBookingsPersistence;
 import hotel.interfaces.IGuestsPersistence;
+import hotel.interfaces.IHotelPersistenceService;
 import hotel.interfaces.IHotelService;
 import hotel.interfaces.IRoomTypesPersistence;
 import hotel.interfaces.IRoomsPersistence;
@@ -16,10 +17,14 @@ public class HotelApplContext {
 	private final IRoomsPersistence roomPersistence;
 	private final IGuestsPersistence guestPersistence;
 	private final IBookingsPersistence bookingPersistence;
+	private final IHotelPersistenceService hotelPersistence;
+	private int excessLevel;
+	private int guestId;
 	
 	public HotelApplContext(Inputoutput inOut, IHotelService hotelService, IAnalytics analyticsService,
 			IRoomTypesPersistence roomTypePersistence, IRoomsPersistence roomPersistence,
-			IGuestsPersistence guestPersistence, IBookingsPersistence bookingPersistence) {
+			IGuestsPersistence guestPersistence, IBookingsPersistence bookingPersistence,
+			IHotelPersistenceService hotelPersistence, int excessLevel, int guestId) {
 		this.inOut = inOut;
 		this.hotelService = hotelService;
 		this.analyticsService = analyticsService;
@@ -27,6 +32,9 @@ public class HotelApplContext {
 		this.roomPersistence = roomPersistence;
 		this.guestPersistence = guestPersistence;
 		this.bookingPersistence = bookingPersistence;
+		this.hotelPersistence = hotelPersistence;
+		this.setExcessLevel(excessLevel);
+		this.setGuestId(guestId);
 	}
 
 	public Inputoutput getInOut() {
@@ -55,5 +63,25 @@ public class HotelApplContext {
 
 	public IAnalytics getAnalyticsService() {
 		return analyticsService;
+	}
+
+	public IHotelPersistenceService getHotelPersistence() {
+		return hotelPersistence;
+	}
+
+	public int getExcessLevel() {
+		return excessLevel;
+	}
+
+	public void setExcessLevel(int excessLevel) {
+		this.excessLevel = excessLevel;
+	}
+
+	public int getGuestId() {
+		return guestId;
+	}
+
+	public void setGuestId(int guestId) {
+		this.guestId = guestId;
 	}
 }

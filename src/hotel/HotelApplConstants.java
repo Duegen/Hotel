@@ -6,16 +6,6 @@ import java.util.Objects;
 import java.util.Properties;
 
 public class HotelApplConstants {
-	private final static Properties props;
-	public final static String DIR = init("DIR", "Data");
-	public final static String ROOM_FILE = init("ROOM_FILE", "rooms.dat");
-	public final static String ROOMTYPE_FILE = init("ROOMTYPE_FILE", "roomtypes.dat");
-	public final static String GUEST_FILE = init("GUEST_FILE", "guests.dat");
-	public final static String BOOKING_FILE = init("BOOKING_FILE", "bookings.dat");
-	public final static String DATE_FORMAT = init("DATE_FORMAT", "dd.MM.YYYY");
-	public static final String ALGORITHM = init("ALGORITHM", "PBKDF2WithHmacSHA1");
-    public static final int KEY_LENGTH = init("KEY_LENGTH", 256); 
-	
 	static {
 		Properties propsTmp = new Properties();
 		try (FileInputStream env = new FileInputStream("hotel.env")) {
@@ -25,7 +15,22 @@ public class HotelApplConstants {
 		}
 		props = propsTmp;
 	}
-
+	
+	private final static Properties props;
+	public final static String DIR = init("DIR", "Data");
+	public final static String ROOM_FILE = init("ROOM_FILE", "rooms.dat");
+	public final static String ROOMTYPE_FILE = init("ROOMTYPE_FILE", "roomtypes.dat");
+	public final static String GUEST_FILE = init("GUEST_FILE", "guests.dat");
+	public final static String BOOKING_FILE = init("BOOKING_FILE", "bookings.dat");
+	public final static String DATE_FORMAT = init("DATE_FORMAT", "dd.MM.yyyy");
+	public static final String ALGORITHM = init("ALGORITHM", "PBKDF2WithHmacSHA1");
+    public static final int KEY_LENGTH = init("KEY_LENGTH", 256); 
+    
+    public static final String MANAGER_LOGIN = init("MANAGER_LOGIN", "manager@hotel.il");
+    public static final String MANAGER_PASSWORD = init("MANAGER_PASSWORD", "Password1");
+    public static final String ACCOUNTANT_LOGIN = init("ACCOUNTANT_LOGIN", "accountant@hotel.com");
+    public static final String ACCOUNTANT_PASSWORD = init("ACCOUNTANT_PASSWORD", "Password1");
+	
 	private static String init(String prop, String defaultValue) {
 		String propTmp;
 		if(Objects.isNull(props))

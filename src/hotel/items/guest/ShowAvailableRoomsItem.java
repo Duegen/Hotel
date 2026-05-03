@@ -9,7 +9,7 @@ import hotel.service.dto.output.RoomDTO;
 
 public class ShowAvailableRoomsItem extends HotelItem{
 
-	protected ShowAvailableRoomsItem(HotelApplContext context) {
+	public ShowAvailableRoomsItem(HotelApplContext context) {
 		super(context);
 	}
 
@@ -28,7 +28,7 @@ public class ShowAvailableRoomsItem extends HotelItem{
 				inOut.outputlLine("No available rooms for selected dates");
 				return;
 			}
-			inOut.outputlLine("Available rooms: ");
+			inOut.outputlLine("Available rooms for dates %s -> %s: ".formatted(dates.checkIn().toString(), dates.checkOut().toString()));
 			showRooms(availableRooms, "No available rooms for selected dates");
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());

@@ -1,25 +1,31 @@
 package hotel.items.accountant;
 
+import java.time.LocalDate;
+
+import hotel.HotelApplConstants;
 import hotel.HotelApplContext;
 import hotel.items.HotelItem;
 
 public class ShowBookingsByCheckInItem extends HotelItem {
 
-	protected ShowBookingsByCheckInItem(HotelApplContext context) {
+	public ShowBookingsByCheckInItem(HotelApplContext context) {
 		super(context);
-		// TODO Auto-generated constructor stub
 	}
+
 
 	@Override
 	public String displayName() {
-		// TODO Auto-generated method stub
-		return null;
+		return "Show bookings for selected day";
 	}
+
 
 	@Override
 	public void perform() {
-		// TODO Auto-generated method stub
-
+		LocalDate selected = inOut.inputDate("Enter date in format", HotelApplConstants.DATE_FORMAT);
+		if(selected==null)
+			return;
+		showFullBookings(context.getHotelService().getBookingsDTO().stream().filter(bk -> bk.checkIn().equals(selected)).toList(), "No bookings found for "+ selected);
+		
 	}
 
 }

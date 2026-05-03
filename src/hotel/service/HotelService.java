@@ -2,11 +2,14 @@ package hotel.service;
 
 import java.security.spec.KeySpec;
 import java.time.LocalDate;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
 
@@ -141,7 +144,7 @@ public class HotelService implements IHotelService {
 		if (!roomTypes.containsKey(dto.roomTypeId()))
 			throw new RoomTypeNotFoundException(dto.roomTypeId());
 		RoomType roomType = roomTypes.get(dto.roomTypeId());
-		boolean typeIsUsedByRooms = rooms.values().stream().map(Room::getType).anyMatch(type -> type.equals(roomType));
+		boolean typeIsUsedByRooms = rooms.values().stream().map(Room::getType).anyMatch(type -> type.equals(roomType.getTypeId()));
 		if (typeIsUsedByRooms)
 			throw new RemoveRoomTypeAssignException(dto.roomTypeId());
 		RoomType removedRoomType = roomTypes.remove(dto.roomTypeId());
@@ -187,7 +190,7 @@ public class HotelService implements IHotelService {
 	}
 	
 	@Override
-	public GuestCreatedDTO createGuest(GuestCreateDTO dto)
+	public Guest createGuest(GuestCreateDTO dto)
 			throws GuestException, ValidationException {
 		int guestId = findFreeId(guests, Constants.GUEST_MIN_ID, Constants.GUEST_MAX_ID);
 		if (guestId == -1)
@@ -198,7 +201,7 @@ public class HotelService implements IHotelService {
 		if (guests.values().stream().anyMatch(g -> g.getEmail().equals(dto.email())))
 			throw new DuplicateEmailException(dto.email());
 		guests.put(guestId, guest);
-		return new GuestCreatedDTO(guest.getName(), guest.getEmail(), guest.getDateOfBirth());
+		return guest;
 	}
 
 	@Override
@@ -418,25 +421,43 @@ public class HotelService implements IHotelService {
 	
 
 	@Override
-	public Guest login(GuestLoginDTO dto) throws ValidationException, GuestException {
+	public Entry<Integer, Integer> login(GuestLoginDTO dto) throws ValidationException, GuestException {
+		byte[] hash;
+		byte[] inputHash;
+		String password;
+		int excessLevel = -1;
+		int id = 0;
+		
 		Validation.validate(dto);
-		Guest guest = findGuestByEmail(dto.email());
-		if(Objects.isNull(guest))
-			throw new GuestLoginException();
-		String hashedPassword;
+		if(dto.email().equals(HotelApplConstants.ACCOUNTANT_LOGIN)) {
+			excessLevel = 2;
+			password = HotelApplConstants.ACCOUNTANT_PASSWORD;
+		}
+		else if(dto.email().equals(HotelApplConstants.MANAGER_LOGIN)) {
+			excessLevel = 1;
+			password = HotelApplConstants.MANAGER_PASSWORD;
+		}
+		else {
+			excessLevel = 0;
+			Guest guest = findGuestByEmail(dto.email());
+			if(Objects.isNull(guest))
+				throw new GuestLoginException();
+			id = guest.getId();
+			password = guest.getPassword();
+		}
 		try {
-			String[] parts = guest.getPassword().split(":");
+			String[] parts = password.split(":");
 			byte[] salt = Base64.getDecoder().decode(parts[0]);
+			hash = Base64.getDecoder().decode(parts[1]);	
 			KeySpec spec = new PBEKeySpec(dto.password().toCharArray(), salt, 65536, HotelApplConstants.KEY_LENGTH);
-			SecretKeyFactory factory;
-			factory = SecretKeyFactory.getInstance(HotelApplConstants.ALGORITHM);
-			hashedPassword = factory.generateSecret(spec).getEncoded().toString();
+			SecretKeyFactory factory = SecretKeyFactory.getInstance(HotelApplConstants.ALGORITHM);
+			inputHash = factory.generateSecret(spec).getEncoded();
 		} catch (Exception e) {
 			throw new GuestLoginErrorException();
 		}
-        if(!guest.getPassword().equals(hashedPassword))
+        if(!Arrays.equals(hash, inputHash))
 			throw new GuestLoginException();
-        return guest;
+        return new AbstractMap.SimpleEntry<Integer, Integer>(id, excessLevel);
 	}
 
 

@@ -10,7 +10,7 @@ import hotel.service.dto.output.RoomTypeDTO;
 
 public class AddRoomItem extends HotelItem {
 
-	protected AddRoomItem(HotelApplContext context) {
+	public AddRoomItem(HotelApplContext context) {
 		super(context);
 	}
 
@@ -27,7 +27,8 @@ public class AddRoomItem extends HotelItem {
 			showRoomTypes(roomTypes, "No available room types are found");
 			RoomCreateDTO newRoom = addRoom();
 			RoomDTO createdRoom = hotelService.createRoom(newRoom);
-			inOut.outputlLine("Room created: "+ createdRoom);
+			inOut.outputlLine("Room created: room number - %d, category - %s, price per night - %.2f, capacity - %d"
+					.formatted(createdRoom.RoomNumber(), createdRoom.category(), createdRoom.pricePerNight(), createdRoom.capacity()));
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());
 		}

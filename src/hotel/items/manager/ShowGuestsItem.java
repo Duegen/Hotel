@@ -8,7 +8,7 @@ import hotel.service.dto.output.GuestDTO;
 
 public class ShowGuestsItem extends HotelItem {
 
-	protected ShowGuestsItem(HotelApplContext context) {
+	public ShowGuestsItem(HotelApplContext context) {
 		super(context);
 	}
 

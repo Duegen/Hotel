@@ -3,6 +3,7 @@ package hotel.interfaces;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import hotel.model.*;
 import hotel.service.dto.input.BookingCreateDTO;
@@ -17,7 +18,6 @@ import hotel.service.dto.input.RoomTypeCreateDTO;
 import hotel.service.dto.input.RoomTypeIdDTO;
 import hotel.service.dto.output.BookingDTO;
 import hotel.service.dto.output.BookingFullDTO;
-import hotel.service.dto.output.GuestCreatedDTO;
 import hotel.service.dto.output.GuestDTO;
 import hotel.service.dto.output.RoomDTO;
 import hotel.service.dto.output.RoomTypeDTO;
@@ -29,7 +29,7 @@ public interface IHotelService {
 	void addRoomType(RoomType roomType) throws RoomTypeException, ValidationException;
 	RoomDTO createRoom(RoomCreateDTO dto) throws RoomException, RoomTypeException, ValidationException;
 	void addRoom(Room dto) throws RoomException, RoomTypeException, ValidationException;
-	GuestCreatedDTO createGuest(GuestCreateDTO dto) throws GuestException, ValidationException;
+	Guest createGuest(GuestCreateDTO dto) throws GuestException, ValidationException;
 	void addGuest(Guest dto) throws GuestException, ValidationException;
 	BookingDTO createBooking(BookingCreateDTO dto) throws BookingException, GuestException, RoomException, ValidationException;
 	void addBooking(Booking booking) throws BookingException, GuestException, RoomException, ValidationException;
@@ -59,7 +59,7 @@ public interface IHotelService {
 	Booking findBookingById(int bookingId);
 	
 	void rebuildBookingsByCheckInDate();
-	Guest login(GuestLoginDTO login) throws ValidationException, GuestException;
+	Entry<Integer, Integer> login(GuestLoginDTO login) throws ValidationException, GuestException;
 	Guest findGuestByEmail(String email);
 	
 	List<BookingDTO> getBookingsForGuest(int guestId);

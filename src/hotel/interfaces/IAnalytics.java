@@ -5,14 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 import hotel.model.Booking;
-import hotel.model.RoomType;
+import hotel.service.dto.output.RoomTypeDTO;
 
 public interface IAnalytics {
 	double averageBookingPrice();
-	List<RoomType> mostPopularRoomTypes();
+	List<RoomTypeDTO> mostPopularRoomTypes();
 	int getAvailableRoomsCount(LocalDate date);
 	int getOccupiedRoomsCount(LocalDate date);
-	List<RoomType> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge);
+	List<RoomTypeDTO> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge);
 	int bookingsNumber();
 	Map<Integer, Booking> getBookings();
 }

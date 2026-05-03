@@ -6,7 +6,7 @@ public class RemoveRoomAssignException extends RoomException {
 	private static final long serialVersionUID = 1L;
 
 	public RemoveRoomAssignException(int roomNumber) {
-		super("room with number %d has related bookings and can't be removed");
+		super("room with number %d has related bookings and can't be removed".formatted(roomNumber));
 	}
 
 }

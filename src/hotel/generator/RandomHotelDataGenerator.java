@@ -83,7 +83,7 @@ public class RandomHotelDataGenerator {
 				.findFirst().orElse(null);
 		LocalDate randomBD = Constants.MIN_BD.plusDays(r.nextLong(0, ChronoUnit.DAYS.between(Constants.MIN_BD, Constants.MAX_BD)));
 		GuestCreateDTO dto = new GuestCreateDTO(randomNameEmail.getKey(),
-				randomNameEmail.getValue(), randomBD, "password1");
+				randomNameEmail.getValue(), randomBD, "Password1");
 		return dto;
 	}
 	

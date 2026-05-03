@@ -1,25 +1,32 @@
 package hotel.items.accountant;
 
+import java.time.LocalDate;
+
+import hotel.HotelApplConstants;
 import hotel.HotelApplContext;
 import hotel.items.HotelItem;
 
 public class ShowOccupancyForDateItem extends HotelItem {
 
-	protected ShowOccupancyForDateItem(HotelApplContext context) {
+	public ShowOccupancyForDateItem(HotelApplContext context) {
 		super(context);
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	@Override
 	public String displayName() {
-		// TODO Auto-generated method stub
-		return null;
+		
+		return "Show occupancy for date";
 	}
 
 	@Override
 	public void perform() {
-		// TODO Auto-generated method stub
-
+		LocalDate selected = inOut.inputDate("Enter date in format", HotelApplConstants.DATE_FORMAT);
+		if(selected == null)
+			return;
+		inOut.outputlLine("Occupied rooms for : "+ selected + ": "+
+				analyticsService
+				.getOccupiedRoomsCount(selected));
 	}
 
 }

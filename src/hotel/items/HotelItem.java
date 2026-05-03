@@ -9,6 +9,8 @@ import cli.Item;
 import hotel.HotelApplConstants;
 import hotel.HotelApplContext;
 import hotel.interfaces.*;
+import hotel.model.Guest;
+import hotel.model.RoomType;
 import hotel.service.dto.input.*;
 import hotel.service.dto.output.*;
 
@@ -144,7 +146,8 @@ public abstract class HotelItem implements Item {
 			return;
 		}
 		bookings.stream().sorted((bk1, bk2) -> bk1.BookingId() - bk2.BookingId())
-		.forEach(inOut::outputlLine);
+		.forEach(bk -> inOut.outputlLine("room number - %d, category - %s, price per night - %.2f, capacity - %d, check in - %s, check out - %s"
+				.formatted(bk.roomNumber(), bk.caregory(), bk.pricePerNight(), bk.capacity(), bk.checkIn().toString(), bk.checkOut().toString())));
 	}
 	
 	protected void showFullBookings(List<BookingFullDTO> bookings, String newMessage) {
@@ -153,7 +156,13 @@ public abstract class HotelItem implements Item {
 			return;
 		}
 		bookings.stream().sorted((bk1, bk2) -> bk1.BookingId() - bk2.BookingId())
-		.forEach(inOut::outputlLine);
+		.forEach(bk -> {
+			Guest guest = bk.guest();
+			RoomType rt = bk.roomType();
+			inOut.outputlLine("booking id - %d, guest id - %d, guest name - %s, guest email - %s, room number - %d, category - %s, price per night - %.2f, capacity - %d, check in - %s, check out - %s"
+					.formatted(bk.BookingId(), guest.getId(), guest.getName(), guest.getEmail(), bk.roomNumber(), rt.getCategory(), rt.getPricePerNight(), rt.getCapacity(), bk.checkIn().toString(), bk.checkOut().toString()));
+		});
+				
 	}
 
 	protected void showRooms(List<RoomDTO> rooms, String newMessage) {
@@ -162,7 +171,8 @@ public abstract class HotelItem implements Item {
 			return;
 		}
 		rooms.stream().sorted((r1, r2) -> r1.RoomNumber() - r2.RoomNumber())
-		.forEach(inOut::outputlLine);
+		.forEach(room -> inOut.outputlLine("room number - %d, category - %s, price per night - %.2f, capacity - %d"
+				.formatted(room.RoomNumber(), room.category(), room.pricePerNight(), room.capacity())));
 	}
 	
 	protected void showRoomTypes(List<RoomTypeDTO> roomTypes, String newMessage) {
@@ -171,7 +181,8 @@ public abstract class HotelItem implements Item {
 			return;
 		}
 		roomTypes.stream().sorted((rt1, rt2) -> rt1.roomTypeId() - rt2.roomTypeId())
-		.forEach(inOut::outputlLine);
+		.forEach(rt -> inOut.outputlLine("room type id - %d, category - %s, price per night - %.2f, capacity - %d"
+				.formatted(rt.roomTypeId(), rt.category(), rt.pricePerNight(), rt.capacity())));
 	}
 	
 	protected void showGuests(List<GuestDTO> guests, String newMessage) {
@@ -180,6 +191,7 @@ public abstract class HotelItem implements Item {
 			return;
 		}
 		guests.stream().sorted((g1, g2) -> g1.guestId() - g2.guestId())
-		.forEach(inOut::outputlLine);
+		.forEach(g -> inOut.outputlLine("guest id - %d, guest name - %s, guest email - %s, guest date of birth - %s"
+				.formatted(g.guestId(), g.name(), g.email(), g.dateOfBirth().toString())));
 	}
 }

@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import hotel.interfaces.IAnalytics;
 import hotel.interfaces.IHotelService;
 import hotel.model.*;
+import hotel.service.dto.output.RoomTypeDTO;
 import hotel.validation.Constants;
 
 public class Analytics implements IAnalytics {
@@ -69,12 +70,12 @@ public class Analytics implements IAnalytics {
 	}
 
 	@Override
-	public List<RoomType> mostPopularRoomTypes() {
+	public List<RoomTypeDTO> mostPopularRoomTypes() {
 		return getMostPopularRoomStream(bookings.values().stream());
 	}
 
 	@Override
-	public List<RoomType> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge) {
+	public List<RoomTypeDTO> getMostPopularRoomTypesForAgeRange(int minAge, int maxAge) {
 		if (minAge < Constants.MIN_AGE || minAge > Constants.MAX_AGE || maxAge > Constants.MAX_AGE || maxAge < minAge)
 			throw new IllegalArgumentException("invalid age params");
 		return getMostPopularRoomStream(
@@ -82,12 +83,16 @@ public class Analytics implements IAnalytics {
 						&& guests.get(bk.getGuestId()).getAge() <= maxAge));
 	}
 
-	private List<RoomType> getMostPopularRoomStream(Stream<Booking> bookingStream) {
+	private List<RoomTypeDTO> getMostPopularRoomStream(Stream<Booking> bookingStream) {
 		Map<Integer, Long> counts = bookingStream.collect(
 				Collectors.groupingBy(booking -> rooms.get(booking.getRoomNumber()).getType(), Collectors.counting()));
 		long max = counts.values().stream().mapToLong(Long::longValue).max().orElse(0);
 		return counts.entrySet().stream().filter(entry -> entry.getValue() == max)
-				.map(entry -> roomTypes.get(entry.getKey())).toList();
+				.map(entry -> {
+					RoomType rt = roomTypes.get(entry.getKey());
+					return new RoomTypeDTO(rt.getTypeId(), rt.getCategory(), rt.getPricePerNight(), rt.getCapacity());
+				}).toList();
+				
 	}
 	
 	@Override

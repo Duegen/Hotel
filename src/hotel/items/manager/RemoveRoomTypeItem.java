@@ -9,7 +9,7 @@ import hotel.service.dto.output.RoomTypeDTO;
 
 public class RemoveRoomTypeItem extends HotelItem {
 
-	protected RemoveRoomTypeItem(HotelApplContext context) {
+	public RemoveRoomTypeItem(HotelApplContext context) {
 		super(context);
 	}
 
@@ -26,7 +26,8 @@ public class RemoveRoomTypeItem extends HotelItem {
 			showRoomTypes(roomTypes, "no room types are found");
 			RoomTypeIdDTO roomTypeId = getExistingRoomType();
 			RoomTypeDTO removed = hotelService.removeRoomType(roomTypeId);
-			inOut.output("Room type removed: " + removed);
+			inOut.output("Room type removed: room type id - %d, category - %s, price per night - %.2f, capacity - %d"
+					.formatted(removed.roomTypeId(), removed.category(), removed.pricePerNight(), removed.capacity()));
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());
 		}

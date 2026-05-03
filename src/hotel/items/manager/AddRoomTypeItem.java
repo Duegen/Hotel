@@ -7,7 +7,7 @@ import hotel.service.dto.output.RoomTypeDTO;
 
 public class AddRoomTypeItem extends HotelItem {
 
-	protected AddRoomTypeItem(HotelApplContext context) {
+	public AddRoomTypeItem(HotelApplContext context) {
 		super(context);
 	}
 
@@ -21,7 +21,8 @@ public class AddRoomTypeItem extends HotelItem {
 		try {
 			RoomTypeCreateDTO newRoomType = addRoomType();
 			RoomTypeDTO createdRoomType = hotelService.createRoomType(newRoomType);
-			inOut.outputlLine("Room type created: "+ createdRoomType);
+			inOut.outputlLine("Room type created: category - %s, price per night - %.2f, capacity - %d"
+					.formatted(createdRoomType.category(), createdRoomType.pricePerNight(), createdRoomType.capacity()));
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());
 		}

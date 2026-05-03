@@ -5,17 +5,15 @@ import java.util.Objects;
 
 import hotel.HotelApplContext;
 import hotel.items.HotelItem;
-import hotel.model.*;
 import hotel.service.dto.input.BookingCreateDTO;
 import hotel.service.dto.input.BookingDatesDTO;
-import hotel.service.dto.input.GuestLoginDTO;
 import hotel.service.dto.input.RoomNumberDTO;
 import hotel.service.dto.output.BookingDTO;
 import hotel.service.dto.output.RoomDTO;
 
 public class CreateBookingItem extends HotelItem{
 
-	protected CreateBookingItem(HotelApplContext context) {
+	public CreateBookingItem(HotelApplContext context) {
 		super(context);		
 	}
 
@@ -27,10 +25,6 @@ public class CreateBookingItem extends HotelItem{
 	@Override
 	public void perform() {
 		try {
-			GuestLoginDTO login = login();
-			Guest guest = hotelService.login(login);
-			inOut.outputlLine("Welcome guest '%s'".formatted(guest.getName()));
-			
 			BookingDatesDTO dates = inputCheckInCheckOut();
 			List<RoomDTO> availableRooms = hotelService.getAvailableRooms(dates);
 			if(availableRooms.isEmpty()) {
@@ -45,9 +39,10 @@ public class CreateBookingItem extends HotelItem{
 				return;
 			}
 				
-			BookingCreateDTO bookingDTO = new BookingCreateDTO(guest.getId(), roomNumber.roomNumber(), dates.checkIn(), dates.checkOut());	
+			BookingCreateDTO bookingDTO = new BookingCreateDTO(context.getGuestId(), roomNumber.roomNumber(), dates.checkIn(), dates.checkOut());	
 			BookingDTO booking = hotelService.createBooking(bookingDTO);
-			inOut.outputlLine("Booking created: "+ booking);
+			inOut.outputlLine("Booking created: room number - %d, category - %s, price per night - %.2f, capacity - %d, check in - %s, check out - %s"
+					.formatted(booking.roomNumber(), booking.caregory(), booking.pricePerNight(), booking.capacity(), booking.checkIn(), booking.checkOut()));
 		} catch (Exception e) {
 			inOut.outputlLine(e.getMessage());
 		}

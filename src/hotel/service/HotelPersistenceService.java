@@ -8,29 +8,51 @@ import java.util.List;
 import java.util.Objects;
 
 import hotel.HotelApplConstants;
-import hotel.HotelApplContext;
+import hotel.interfaces.IBookingsPersistence;
+import hotel.interfaces.IGuestsPersistence;
 import hotel.interfaces.IHotelPersistenceService;
 import hotel.interfaces.IHotelService;
+import hotel.interfaces.IRoomTypesPersistence;
+import hotel.interfaces.IRoomsPersistence;
 import hotel.model.*;
 import hotel.validation.Validation;
 import hotel.validation.exceptions.ValidationException;
 
 public class HotelPersistenceService implements IHotelPersistenceService {
-	private final HotelApplContext context;
+	private final IHotelService service;
+	private final IRoomTypesPersistence roomTypesPersistenceImp;
+	private final IRoomsPersistence roomsPersistenceImp;
+	private final IGuestsPersistence guestsPersistenceImp;
+	private final IBookingsPersistence bookingsPersistenceImp;
 	private static HotelPersistenceService instance;
 
-	private HotelPersistenceService(HotelApplContext context) {
-		this.context = context;
+	private HotelPersistenceService(IHotelService service,
+			IRoomTypesPersistence roomTypesPersistenceImp,
+			IRoomsPersistence roomsPersistenceImp,
+			IGuestsPersistence guestsPersistenceImp,
+			IBookingsPersistence bookingsPersistenceImp) {
+		this.service = service;
+		this.roomTypesPersistenceImp = roomTypesPersistenceImp;
+		this.roomsPersistenceImp = roomsPersistenceImp;
+		this.guestsPersistenceImp = guestsPersistenceImp;
+		this.bookingsPersistenceImp = bookingsPersistenceImp;
 	}
 
-	public static HotelPersistenceService getInstance(HotelApplContext context) {
+	public static HotelPersistenceService getInstance(IHotelService service,
+			IRoomTypesPersistence roomTypesPersistenceImp,
+			IRoomsPersistence roomsPersistenceImp,
+			IGuestsPersistence guestsPersistenceImp,
+			IBookingsPersistence bookingsPersistenceImp) {
 		if (instance == null)
-			instance = new HotelPersistenceService(context);
+			instance = new HotelPersistenceService(service,
+					roomTypesPersistenceImp,
+					roomsPersistenceImp,
+					guestsPersistenceImp,
+					bookingsPersistenceImp);
 		return instance;
 	}
 
 	public void saveHotelData() throws IOException {
-		IHotelService service = context.getHotelService();
 		saveRoomTypes(service.getRoomTypes().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOMTYPE_FILE));
 		saveRooms(service.getRooms().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOM_FILE));
 		saveGuests(service.getGuests().values(), Paths.get(HotelApplConstants.DIR, HotelApplConstants.GUEST_FILE));
@@ -38,7 +60,6 @@ public class HotelPersistenceService implements IHotelPersistenceService {
 	}
 
 	public boolean loadHotelData() throws IOException {
-		IHotelService service = context.getHotelService();
 		List<RoomType> roomTypesLoaded = loadRoomTypes(Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOMTYPE_FILE));
 		List<Room> roomsLoaded = loadRooms(Paths.get(HotelApplConstants.DIR, HotelApplConstants.ROOM_FILE));
 		List<Guest> guestsLoaded = loadGuests(Paths.get(HotelApplConstants.DIR, HotelApplConstants.GUEST_FILE));
@@ -86,11 +107,11 @@ public class HotelPersistenceService implements IHotelPersistenceService {
 				return false;
 			}
 		}).toList();
-		context.getRoomTypePersistence().saveRoomTypes(validated, dataFile);
+		roomTypesPersistenceImp.saveRoomTypes(validated, dataFile);
 	}
 
 	private List<RoomType> loadRoomTypes(Path dataFile) throws IOException {
-		List<RoomType> roomTypes = context.getRoomTypePersistence().loadRoomTypes(dataFile);
+		List<RoomType> roomTypes = roomTypesPersistenceImp.loadRoomTypes(dataFile);
 		return roomTypes.stream().filter(roomType -> {
 			try {
 				return Validation.validate(roomType);
@@ -112,11 +133,11 @@ public class HotelPersistenceService implements IHotelPersistenceService {
 				return false;
 			}
 		}).toList();
-		context.getRoomPersistence().saveRooms(validated, dataFile);
+		roomsPersistenceImp.saveRooms(validated, dataFile);
 	}
 
 	private List<Room> loadRooms(Path dataFile) throws IOException {
-		List<Room> rooms = context.getRoomPersistence().loadRooms(dataFile);
+		List<Room> rooms = roomsPersistenceImp.loadRooms(dataFile);
 		return rooms.stream().filter(room -> {
 			try {
 				return Validation.validate(room);
@@ -138,11 +159,11 @@ public class HotelPersistenceService implements IHotelPersistenceService {
 				return false;
 			}
 		}).toList();
-		context.getGuestPersistence().saveGuests(validated, dataFile);
+		guestsPersistenceImp.saveGuests(validated, dataFile);
 	}
 
 	private List<Guest> loadGuests(Path dataFile) throws IOException {
-		List<Guest> guests = context.getGuestPersistence().loadGuests(dataFile);
+		List<Guest> guests = guestsPersistenceImp.loadGuests(dataFile);
 		return guests.stream().filter(guest -> {
 			try {
 				return Validation.validate(guest);
@@ -164,11 +185,11 @@ public class HotelPersistenceService implements IHotelPersistenceService {
 				return false;
 			}
 		}).toList();
-		context.getBookingPersistence().saveBookings(validated, dataFile);
+		bookingsPersistenceImp.saveBookings(validated, dataFile);
 	}
 
 	private List<Booking> loadBookings(Path dataFile) throws IOException {
-		List<Booking> bookings = context.getBookingPersistence().loadBookings(dataFile);
+		List<Booking> bookings = bookingsPersistenceImp.loadBookings(dataFile);
 		return bookings.stream().filter(booking -> {
 			try {
 				return Validation.validate(booking);
